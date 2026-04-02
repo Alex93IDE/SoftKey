@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Softkey — 2FA Tokens</title>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <link rel="stylesheet" href="/style.css" />
+</head>
+<body>
+
+  <!-- VIEW: Loading -->
+  <div id="view-loading" class="auth-view active">
+    <div class="spinner"></div>
+  </div>
+
+  <!-- VIEW: Setup (first time) -->
+  <div id="view-setup" class="auth-view">
+    <div class="auth-card">
+      <h1>SOFTKEY</h1>
+      <p class="auth-subtitle">Create a master password to protect your tokens</p>
+      <div class="field">
+        <label>Master Password</label>
+        <input id="setup-password" type="password" placeholder="Min. 8 characters" autocomplete="new-password" />
+      </div>
+      <div class="field">
+        <label>Confirm Password</label>
+        <input id="setup-confirm" type="password" placeholder="Repeat your password" autocomplete="new-password" />
+      </div>
+      <div id="setup-error" class="form-error"></div>
+      <button class="add-btn" id="setup-btn" onclick="doSetup()">Create Password</button>
+    </div>
+  </div>
+
+  <!-- VIEW: Recovery code (shown once after setup) -->
+  <div id="view-recovery-code" class="auth-view">
+    <div class="auth-card">
+      <h2>Save Your Recovery Code</h2>
+      <p class="auth-subtitle" style="text-align:left; margin-bottom: 16px;">If you forget your password, this code lets you set a new one. It will <strong>not be shown again</strong>.</p>
+      <div class="auth-warn">
+        ⚠️ Store this somewhere safe — a password manager, printed paper, or offline backup.
+      </div>
+      <div class="recovery-box">
+        <span class="recovery-code" id="recovery-code-display"></span>
+        <button class="copy-small" id="copy-recovery-btn" onclick="copyRecovery()">Copy</button>
+      </div>
+      <label class="checkbox-row">
+        <input type="checkbox" id="recovery-confirmed" onchange="toggleContinueBtn()" />
+        I have saved the recovery code
+      </label>
+      <button class="add-btn" id="recovery-continue-btn" disabled onclick="onRecoveryContinue()">Continue</button>
+    </div>
+  </div>
+
+  <!-- VIEW: Login -->
+  <div id="view-login" class="auth-view">
+    <div class="auth-card">
+      <h1>SOFTKEY</h1>
+      <p class="auth-subtitle">Enter your master password to unlock</p>
+      <div class="field">
+        <label>Master Password</label>
+        <input id="login-password" type="password" placeholder="Your password" autocomplete="current-password" />
+      </div>
+      <div id="login-error" class="form-error"></div>
+      <button class="add-btn" id="login-btn" onclick="doLogin()">Unlock</button>
+      <button class="link-btn" onclick="showView('view-recover')">Forgot password?</button>
+    </div>
+  </div>
+
+  <!-- VIEW: Recover -->
+  <div id="view-recover" class="auth-view">
+    <div class="auth-card">
+      <h2>Recover Access</h2>
+      <p class="auth-subtitle" style="text-align:left; margin-bottom: 20px;">Use your recovery code to set a new password.</p>
+      <div class="field">
+        <label>Recovery Code</label>
+        <input id="recover-code" type="text" placeholder="xxxxxxxx-xxxxxxxx-..." autocomplete="off" />
+      </div>
+      <div class="field">
+        <label>New Password</label>
+        <input id="recover-password" type="password" placeholder="Min. 8 characters" autocomplete="new-password" />
+      </div>
+      <div id="recover-error" class="form-error"></div>
+      <button class="add-btn" id="recover-btn" onclick="doRecover()">Reset Password</button>
+      <button class="link-btn" onclick="showView('view-login')">← Back to login</button>
+    </div>
+  </div>
+
+  <!-- MAIN APP -->
+  <div class="app-wrap">
+    <div class="container">
+      <header>
+        <h1>SOFTKEY</h1>
+        <p>Personal 2FA Authenticator</p>
+        <button class="lock-btn" onclick="doLogout()" title="Lock">🔒</button>
+      </header>
+      <div id="tokens-list">
+        <div class="empty-state">Loading tokens...</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bottom action bar -->
+  <div class="action-bar">
+    <div class="action-bar-inner">
+      <button class="menu-btn primary" onclick="openModal()">＋ Add</button>
+      <button class="menu-btn" onclick="exportTokens()">Export</button>
+      <button class="menu-btn" onclick="openImportModal()">Import</button>
+      <button class="menu-btn" onclick="openSettingsModal()">⚙ Settings</button>
+    </div>
+  </div>
+
+  <!-- Add token modal -->
+  <div class="modal-overlay" id="modal-overlay" onclick="handleOverlayClick(event)">
+    <div class="modal">
+      <div class="modal-header">
+        <h2>Add Token</h2>
+        <button class="modal-close" onclick="closeModal()">&#x2715;</button>
+      </div>
+      <div class="field">
+        <label>Service / Issuer</label>
+        <input id="inp-name" type="text" placeholder="Google, GitHub, Stripe..." autocomplete="off" />
+      </div>
+      <div class="field">
+        <label>Account <span style="color:var(--muted);font-weight:400;text-transform:none;letter-spacing:0">(optional)</span></label>
+        <input id="inp-account" type="text" placeholder="user@email.com" autocomplete="off" />
+      </div>
+      <div class="field">
+        <label>TOTP Secret</label>
+        <input id="inp-secret" type="text" placeholder="JBSWY3DPEHPK3PXP" autocomplete="off" />
+      </div>
+      <div id="form-error" class="form-error"></div>
+      <button class="add-btn" id="add-btn" onclick="addToken()">Add</button>
+    </div>
+  </div>
+
+  <!-- Import modal -->
+  <div class="modal-overlay" id="import-overlay" onclick="handleImportOverlayClick(event)">
+    <div class="modal">
+      <div class="modal-header">
+        <h2>Import Tokens</h2>
+        <button class="modal-close" onclick="closeImportModal()">&#x2715;</button>
+      </div>
+      <p style="font-size:0.82rem;color:var(--muted);margin-bottom:14px;line-height:1.5;">
+        Paste or load a file with <code style="color:var(--accent);background:var(--bg);padding:1px 5px;border-radius:4px;">otpauth://</code> URIs (one per line).<br>
+        Compatible with Google Authenticator, Proton Pass, Aegis, Authy exports.
+      </p>
+      <div class="field">
+        <label>File</label>
+        <input id="import-file" type="file" accept=".txt,.json" style="background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);padding:8px 12px;font-size:0.88rem;width:100%;cursor:pointer;" onchange="onImportFile(event)" />
+      </div>
+      <div class="field">
+        <label>Or paste content</label>
+        <textarea id="import-content" rows="5" placeholder="otpauth://totp/GitHub?secret=JBSWY3DP&issuer=GitHub&#10;otpauth://totp/Google?secret=..." style="background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);padding:10px 14px;font-size:0.82rem;font-family:'Courier New',monospace;outline:none;transition:border-color 0.2s;width:100%;resize:vertical;" oninput="updateImportPreview()"></textarea>
+      </div>
+      <div id="import-preview" style="font-size:0.82rem;color:var(--muted);margin-bottom:10px;min-height:18px;"></div>
+      <div style="display:flex;gap:8px;margin-bottom:14px;">
+        <label style="display:flex;align-items:center;gap:6px;font-size:0.85rem;cursor:pointer;">
+          <input type="radio" name="import-mode" value="merge" checked style="accent-color:var(--accent);" /> Merge (skip duplicates)
+        </label>
+        <label style="display:flex;align-items:center;gap:6px;font-size:0.85rem;cursor:pointer;">
+          <input type="radio" name="import-mode" value="replace" style="accent-color:var(--accent);" /> Replace all
+        </label>
+      </div>
+      <div id="import-error" class="form-error"></div>
+      <button class="add-btn" id="import-btn" onclick="doImport()">Import</button>
+    </div>
+  </div>
+
+  <!-- Settings modal -->
+  <div class="modal-overlay" id="settings-overlay" onclick="handleSettingsOverlayClick(event)">
+    <div class="modal">
+      <div class="modal-header">
+        <h2>Settings</h2>
+        <button class="modal-close" onclick="closeSettingsModal()">&#x2715;</button>
+      </div>
+
+      <div style="margin-bottom: 6px;">
+        <div style="font-size:0.78rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:12px;">Auto-lock</div>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;" id="autolock-options">
+          <button class="autolock-opt" data-min="0" onclick="setAutolock(0)">Never</button>
+          <button class="autolock-opt" data-min="1" onclick="setAutolock(1)">1 min</button>
+          <button class="autolock-opt" data-min="3" onclick="setAutolock(3)">3 min</button>
+          <button class="autolock-opt" data-min="5" onclick="setAutolock(5)">5 min</button>
+          <button class="autolock-opt" data-min="10" onclick="setAutolock(10)">10 min</button>
+          <button class="autolock-opt" data-min="15" onclick="setAutolock(15)">15 min</button>
+        </div>
+        <p id="autolock-hint" style="font-size:0.8rem;color:var(--muted);margin-top:12px;line-height:1.4;"></p>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script src="/app.js"></script>
+</body>
+</html>
