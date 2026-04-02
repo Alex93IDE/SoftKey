@@ -15,11 +15,42 @@ A minimal, self-hosted personal 2FA authenticator that runs locally in your brow
 - Auto-lock after configurable inactivity period (1, 3, 5, 10, or 15 minutes)
 - Runs entirely on your machine — secrets never leave it
 
+## Screenshots
+
+<table>
+  <tr>
+    <td align="center"><img src="docs/screen-login.png" width="200"/><br/><sub>Login</sub></td>
+    <td align="center"><img src="docs/screen-setup.png" width="200"/><br/><sub>First-time setup</sub></td>
+    <td align="center"><img src="docs/screen-recovery.png" width="200"/><br/><sub>Recovery code</sub></td>
+  </tr>
+  <tr>
+    <td align="center"><img src="docs/screen-main.png" width="200"/><br/><sub>Token list</sub></td>
+    <td align="center"><img src="docs/screen-add.png" width="200"/><br/><sub>Add token</sub></td>
+    <td align="center"><img src="docs/screen-settings.png" width="200"/><br/><sub>Settings / Auto-lock</sub></td>
+  </tr>
+</table>
+
 ## Requirements
 
-- Node.js 18+
+- Node.js 18+ **or** Docker
 
 ## Setup
+
+### With Docker (recommended)
+
+```bash
+docker compose up -d
+```
+
+Data files (`auth.json`, `secrets.json`, `session.json`) are stored in `./data/` on the host and persist across restarts.
+
+**To update after a `git pull`:**
+
+```bash
+docker compose up -d --build
+```
+
+### Without Docker
 
 ```bash
 npm install

@@ -5,10 +5,11 @@ const fs = require('fs');
 const crypto = require('crypto');
 
 const app = express();
-const PORT = 3333;
-const SECRETS_FILE = path.join(__dirname, 'secrets.json');
-const AUTH_FILE    = path.join(__dirname, 'auth.json');
-const SESSION_FILE = path.join(__dirname, 'session.json');
+const PORT     = process.env.PORT     || 3333;
+const DATA_DIR = process.env.DATA_DIR || __dirname;
+const SECRETS_FILE = path.join(DATA_DIR, 'secrets.json');
+const AUTH_FILE    = path.join(DATA_DIR, 'auth.json');
+const SESSION_FILE = path.join(DATA_DIR, 'session.json');
 const PBKDF2_ITER  = 300000;
 const KEY_LEN      = 32;
 const SESSION_MS   = 30 * 24 * 60 * 60 * 1000; // 30 days

@@ -1,7 +1,9 @@
 node_modules/
 data/
-secrets.json
 auth.json
+secrets.json
 session.json
+docs/
 .claude/
 .playwright-mcp/
+*.log

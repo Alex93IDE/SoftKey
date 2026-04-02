@@ -1,0 +1,10 @@
+services:
+  softkey:
+    build: .
+    ports:
+      - "3333:3333"
+    volumes:
+      - ./data:/data
+    environment:
+      - DATA_DIR=/data
+    restart: unless-stopped
