@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Softkey — 2FA Tokens</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0f1117;
+      --surface: #1a1d27;
+      --border: #2a2d3e;
+      --accent: #6c63ff;
+      --accent-dim: #3d3880;
+      --text: #e2e8f0;
+      --muted: #64748b;
+      --danger: #ef4444;
+      --success: #22c55e;
+      --warn: #f59e0b;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      min-height: 100vh;
+      padding: 24px 16px 100px;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 32px;
+    }
+
+    header h1 {
+      font-size: 1.8rem;
+      font-weight: 700;
+      color: var(--accent);
+      letter-spacing: 2px;
+    }
+
+    header p {
+      color: var(--muted);
+      font-size: 0.85rem;
+      margin-top: 4px;
+    }
+
+    .container {
+      max-width: 520px;
+      margin: 0 auto;
+    }
+
+    /* --- Token cards --- */
+    #tokens-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+
+    .token-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px 20px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      transition: border-color 0.2s;
+    }
+
+    .token-card:hover { border-color: var(--accent-dim); }
+
+    .token-info { flex: 1; min-width: 0; }
+
+    .token-name {
+      font-size: 0.78rem;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 4px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .token-code {
+      font-size: 2rem;
+      font-weight: 700;
+      letter-spacing: 6px;
+      font-variant-numeric: tabular-nums;
+      cursor: pointer;
+      user-select: none;
+      transition: color 0.2s;
+    }
+
+    .token-code:hover { color: var(--accent); }
+    .token-code.copied { color: var(--success); }
+    .token-code.invalid { color: var(--danger); font-size: 1rem; letter-spacing: 1px; }
+
+    /* Progress ring */
+    .ring-wrap {
+      position: relative;
+      width: 48px;
+      height: 48px;
+      flex-shrink: 0;
+    }
+
+    .ring-wrap svg { transform: rotate(-90deg); }
+
+    .ring-bg { fill: none; stroke: var(--border); stroke-width: 3; }
+    .ring-fg { fill: none; stroke: var(--accent); stroke-width: 3; stroke-linecap: round; transition: stroke-dashoffset 0.9s linear, stroke 0.5s; }
+    .ring-fg.warn { stroke: var(--warn); }
+    .ring-fg.danger { stroke: var(--danger); }
+
+    .ring-text {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.8rem;
+      font-weight: 600;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .delete-btn {
+      background: none;
+      border: none;
+      color: var(--muted);
+      cursor: pointer;
+      padding: 4px;
+      border-radius: 6px;
+      font-size: 1rem;
+      line-height: 1;
+      transition: color 0.2s, background 0.2s;
+    }
+
+    .delete-btn:hover { color: var(--danger); background: rgba(239,68,68,0.1); }
+
+    .empty-state {
+      text-align: center;
+      color: var(--muted);
+      padding: 40px 0;
+      font-size: 0.9rem;
+    }
+
+    /* --- Bottom action bar --- */
+    .action-bar {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: var(--surface);
+      border-top: 1px solid var(--border);
+      display: flex;
+      justify-content: center;
+      gap: 8px;
+      padding: 12px 16px;
+      z-index: 10;
+    }
+
+    .action-bar-inner {
+      display: flex;
+      gap: 8px;
+      width: 100%;
+      max-width: 520px;
+    }
+
+    .menu-btn {
+      flex: 1;
+      padding: 10px 12px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--bg);
+      color: var(--text);
+      font-size: 0.88rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s, border-color 0.2s, color 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+
+    .menu-btn:hover:not(:disabled) { background: var(--border); }
+    .menu-btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+    .menu-btn.primary:hover { opacity: 0.85; background: var(--accent); }
+    .menu-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+
+    /* --- Modal overlay --- */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.6);
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      z-index: 20;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.25s;
+    }
+
+    .modal-overlay.open {
+      opacity: 1;
+      pointer-events: all;
+    }
+
+    .modal {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px 16px 0 0;
+      padding: 24px 20px 32px;
+      width: 100%;
+      max-width: 520px;
+      transform: translateY(100%);
+      transition: transform 0.3s ease;
+    }
+
+    .modal-overlay.open .modal { transform: translateY(0); }
+
+    .modal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 20px;
+    }
+
+    .modal-header h2 {
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .modal-close {
+      background: none;
+      border: none;
+      color: var(--muted);
+      cursor: pointer;
+      font-size: 1.1rem;
+      padding: 4px;
+      border-radius: 6px;
+      transition: color 0.2s;
+      line-height: 1;
+    }
+
+    .modal-close:hover { color: var(--text); }
+
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin-bottom: 12px;
+    }
+
+    .field label {
+      font-size: 0.78rem;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .field input {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      padding: 10px 14px;
+      font-size: 0.95rem;
+      outline: none;
+      transition: border-color 0.2s;
+      width: 100%;
+    }
+
+    .field input:focus { border-color: var(--accent); }
+
+    .add-btn {
+      width: 100%;
+      padding: 11px;
+      background: var(--accent);
+      border: none;
+      border-radius: 8px;
+      color: #fff;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity 0.2s;
+      margin-top: 4px;
+    }
+
+    .add-btn:hover { opacity: 0.85; }
+    .add-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    .form-error {
+      color: var(--danger);
+      font-size: 0.82rem;
+      margin-top: 8px;
+      display: none;
+    }
+
+    .toast {
+      position: fixed;
+      bottom: 80px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--success);
+      color: #fff;
+      padding: 10px 20px;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      transition: opacity 0.3s ease, visibility 0.3s ease;
+      pointer-events: none;
+      z-index: 99;
+      opacity: 0;
+      visibility: hidden;
+    }
+
+    .toast.show { opacity: 1; visibility: visible; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>SOFTKEY</h1>
+      <p>Personal 2FA Authenticator</p>
+    </header>
+
+    <div id="tokens-list">
+      <div class="empty-state">Loading tokens...</div>
+    </div>
+  </div>
+
+  <!-- Bottom action bar -->
+  <div class="action-bar">
+    <div class="action-bar-inner">
+      <button class="menu-btn primary" onclick="openModal()">＋ Add</button>
+      <button class="menu-btn" onclick="exportTokens()">Export</button>
+      <button class="menu-btn" disabled title="Coming soon">Import</button>
+    </div>
+  </div>
+
+  <!-- Add token modal -->
+  <div class="modal-overlay" id="modal-overlay" onclick="handleOverlayClick(event)">
+    <div class="modal">
+      <div class="modal-header">
+        <h2>Add Token</h2>
+        <button class="modal-close" onclick="closeModal()">&#x2715;</button>
+      </div>
+      <div class="field">
+        <label>Name</label>
+        <input id="inp-name" type="text" placeholder="Google, GitHub, etc." autocomplete="off" />
+      </div>
+      <div class="field">
+        <label>TOTP Secret</label>
+        <input id="inp-secret" type="text" placeholder="JBSWY3DPEHPK3PXP" autocomplete="off" />
+      </div>
+      <div id="form-error" class="form-error"></div>
+      <button class="add-btn" id="add-btn" onclick="addToken()">Add</button>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+    const RADIUS = 20;
+    const CIRC = 2 * Math.PI * RADIUS;
+
+    let tokens = [];
+    let timeRemaining = 30;
+
+    async function fetchTokens() {
+      try {
+        const res = await fetch('/api/tokens');
+        const data = await res.json();
+        tokens = data.tokens;
+        timeRemaining = data.timeRemaining;
+        renderTokens();
+      } catch {
+        // silent
+      }
+    }
+
+    function renderTokens() {
+      const list = document.getElementById('tokens-list');
+
+      if (tokens.length === 0) {
+        list.innerHTML = '<div class="empty-state">No tokens yet. Tap Add to get started.</div>';
+        return;
+      }
+
+      list.innerHTML = tokens.map(t => {
+        const pct = timeRemaining / 30;
+        const offset = CIRC * (1 - pct);
+        const ringClass = timeRemaining <= 5 ? 'danger' : timeRemaining <= 10 ? 'warn' : '';
+        const code = t.token || 'ERROR';
+        const codeClass = t.token ? '' : 'invalid';
+        const formatted = t.token ? t.token.slice(0, 3) + ' ' + t.token.slice(3) : 'Invalid';
+
+        return `
+          <div class="token-card" id="card-${t.id}">
+            <div class="ring-wrap">
+              <svg width="48" height="48" viewBox="0 0 48 48">
+                <circle class="ring-bg" cx="24" cy="24" r="${RADIUS}" />
+                <circle class="ring-fg ${ringClass}" cx="24" cy="24" r="${RADIUS}"
+                  stroke-dasharray="${CIRC}"
+                  stroke-dashoffset="${offset}" />
+              </svg>
+              <div class="ring-text">${timeRemaining}</div>
+            </div>
+            <div class="token-info">
+              <div class="token-name">${escHtml(t.name)}</div>
+              <div class="token-code ${codeClass}" title="Click to copy" onclick="copyToken('${t.id}', '${code}', this)">${formatted}</div>
+            </div>
+            <button class="delete-btn" title="Delete" onclick="deleteToken('${t.id}')">&#x2715;</button>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function updateCountdown() {
+      const sec = 30 - (Math.floor(Date.now() / 1000) % 30);
+
+      if (sec !== timeRemaining) {
+        timeRemaining = sec;
+        if (sec === 30) {
+          fetchTokens();
+          return;
+        }
+        renderTokens();
+      }
+    }
+
+    async function copyToken(id, code, el) {
+      if (!code || code === 'ERROR') return;
+      try {
+        await navigator.clipboard.writeText(code);
+        el.classList.add('copied');
+        el.textContent = 'Copied!';
+        setTimeout(() => {
+          el.classList.remove('copied');
+          const t = tokens.find(x => x.id === id);
+          if (t && t.token) el.textContent = t.token.slice(0, 3) + ' ' + t.token.slice(3);
+        }, 1200);
+      } catch {
+        showToast('Could not copy');
+      }
+    }
+
+    async function addToken() {
+      const name = document.getElementById('inp-name').value.trim();
+      const secret = document.getElementById('inp-secret').value.trim();
+      const errEl = document.getElementById('form-error');
+      const btn = document.getElementById('add-btn');
+
+      errEl.style.display = 'none';
+
+      if (!name || !secret) {
+        errEl.textContent = 'Name and secret are required.';
+        errEl.style.display = 'block';
+        return;
+      }
+
+      btn.disabled = true;
+
+      try {
+        const res = await fetch('/api/secrets', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, secret }),
+        });
+        const data = await res.json();
+
+        if (!res.ok) {
+          errEl.textContent = data.error || 'Failed to add token.';
+          errEl.style.display = 'block';
+          return;
+        }
+
+        document.getElementById('inp-name').value = '';
+        document.getElementById('inp-secret').value = '';
+        closeModal();
+        showToast('Token added');
+        await fetchTokens();
+      } catch {
+        errEl.textContent = 'Connection error.';
+        errEl.style.display = 'block';
+      } finally {
+        btn.disabled = false;
+      }
+    }
+
+    async function deleteToken(id) {
+      if (!confirm('Delete this token?')) return;
+      try {
+        await fetch(`/api/secrets/${id}`, { method: 'DELETE' });
+        await fetchTokens();
+      } catch {
+        showToast('Failed to delete token');
+      }
+    }
+
+    function exportTokens() {
+      if (tokens.length === 0) { showToast('No tokens to export'); return; }
+      const data = JSON.stringify(tokens.map(t => ({ id: t.id, name: t.name })), null, 2);
+      const blob = new Blob([data], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'softkey-export.json';
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    function openModal() {
+      document.getElementById('modal-overlay').classList.add('open');
+      setTimeout(() => document.getElementById('inp-name').focus(), 300);
+    }
+
+    function closeModal() {
+      document.getElementById('modal-overlay').classList.remove('open');
+      document.getElementById('form-error').style.display = 'none';
+    }
+
+    function handleOverlayClick(e) {
+      if (e.target === document.getElementById('modal-overlay')) closeModal();
+    }
+
+    function showToast(msg) {
+      const t = document.getElementById('toast');
+      t.textContent = msg;
+      t.classList.add('show');
+      setTimeout(() => t.classList.remove('show'), 2000);
+    }
+
+    function escHtml(str) {
+      return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Escape') closeModal();
+      if (e.key === 'Enter' && (document.activeElement.id === 'inp-name' || document.activeElement.id === 'inp-secret')) {
+        addToken();
+      }
+    });
+
+    fetchTokens();
+    setInterval(updateCountdown, 500);
+    setInterval(fetchTokens, 30000);
+  </script>
+</body>
+</html>
