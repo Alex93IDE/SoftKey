@@ -992,6 +992,11 @@
       if (sec !== timeRemaining) {
         timeRemaining = sec;
         if (sec === 30) { fetchTokens(); return; }
+        const now = Math.floor(Date.now() / 1000);
+        tokens = tokens.map(t => ({
+          ...t,
+          timeRemaining: (t.period || 30) - (now % (t.period || 30)),
+        }));
         renderTokens();
       }
     }
