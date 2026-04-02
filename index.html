@@ -694,8 +694,11 @@
 
     async function initAuth() {
       try {
+        // Clear any old session token left in localStorage (pre-fix sessions stored there)
+        localStorage.removeItem('sk_session');
+
         // Try to resume an existing session first
-        const saved = localStorage.getItem('sk_session');
+        const saved = sessionStorage.getItem('sk_session');
         if (saved) {
           const res = await fetch('/api/auth/resume', {
             method: 'POST',
@@ -708,7 +711,7 @@
             return;
           }
           // Session expired or invalid — clear it
-          localStorage.removeItem('sk_session');
+          sessionStorage.removeItem('sk_session');
         }
 
         // Fall back to status check
@@ -766,7 +769,7 @@
           return;
         }
 
-        if (data.sessionToken) localStorage.setItem('sk_session', data.sessionToken);
+        if (data.sessionToken) sessionStorage.setItem('sk_session', data.sessionToken);
         recoveryCodeValue = data.recoveryCode;
         document.getElementById('recovery-code-display').textContent = formatRecoveryCode(data.recoveryCode);
         document.getElementById('recovery-confirmed').checked = false;
@@ -842,7 +845,7 @@
         }
 
         document.getElementById('login-password').value = '';
-        if (data.sessionToken) localStorage.setItem('sk_session', data.sessionToken);
+        if (data.sessionToken) sessionStorage.setItem('sk_session', data.sessionToken);
         showView(null);
         fetchTokens();
       } catch {
@@ -896,7 +899,7 @@
 
         document.getElementById('recover-code').value = '';
         document.getElementById('recover-password').value = '';
-        if (data.sessionToken) localStorage.setItem('sk_session', data.sessionToken);
+        if (data.sessionToken) sessionStorage.setItem('sk_session', data.sessionToken);
         showView(null);
         fetchTokens();
       } catch {
@@ -913,8 +916,8 @@
     // =====================
 
     async function doLogout() {
-      const sessionToken = localStorage.getItem('sk_session');
-      localStorage.removeItem('sk_session');
+      const sessionToken = sessionStorage.getItem('sk_session');
+      sessionStorage.removeItem('sk_session');
       await fetch('/api/auth/logout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
