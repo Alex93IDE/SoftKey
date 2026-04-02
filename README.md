@@ -8,7 +8,7 @@ A minimal, self-hosted personal 2FA authenticator that runs locally in your brow
 - Visual countdown ring and next-code preview per token
 - Click any code to copy it to clipboard
 - AES-256-GCM encrypted storage protected by a master password
-- Session persistence — stay logged in across server restarts (30-day sessions)
+- Locks automatically when the browser tab is closed — session is never persisted across page opens
 - Account recovery via one-time recovery code
 - Export tokens as standard `otpauth://` URIs (compatible with Google Authenticator, Proton Pass, Aegis, Authy, etc.)
 - Import tokens from any app that exports `otpauth://` URIs
@@ -90,11 +90,22 @@ Open **⚙ Settings** and choose an inactivity timeout: 1, 3, 5, 10, or 15 minut
 ## Project structure
 
 ```
-main.js        Express server + REST API
-index.html     Frontend (single file, no build step)
-auth.json      Encrypted master key (git-ignored)
-secrets.json   Encrypted TOTP secrets (git-ignored)
-session.json   Active sessions (git-ignored)
+main.js              Entry point — Express setup and route mounting
+lib/
+  crypto.js          AES-256-GCM and PBKDF2 helpers
+  sessions.js        Session create / resume / delete
+  totp.js            TOTP code generation
+  state.js           In-memory master key
+routes/
+  auth.js            /api/auth/* endpoints
+  tokens.js          /api/tokens, /api/secrets, /api/export, /api/import
+public/
+  index.html         App shell (HTML only)
+  style.css          All styles
+  app.js             All frontend logic
+auth.json            Encrypted master key (git-ignored)
+secrets.json         Encrypted TOTP secrets (git-ignored)
+session.json         Active sessions (git-ignored)
 ```
 
 ## API
