@@ -5,9 +5,14 @@ A minimal, self-hosted personal 2FA authenticator that runs locally in your brow
 ## Features
 
 - Generate TOTP codes (RFC 6238) for any service
-- Visual countdown ring per token
+- Visual countdown ring and next-code preview per token
 - Click any code to copy it to clipboard
-- Export your token list as JSON
+- AES-256-GCM encrypted storage protected by a master password
+- Session persistence — stay logged in across server restarts (30-day sessions)
+- Account recovery via one-time recovery code
+- Export tokens as standard `otpauth://` URIs (compatible with Google Authenticator, Proton Pass, Aegis, Authy, etc.)
+- Import tokens from any app that exports `otpauth://` URIs
+- Auto-lock after configurable inactivity period (1, 3, 5, 10, or 15 minutes)
 - Runs entirely on your machine — secrets never leave it
 
 ## Requirements
@@ -23,27 +28,56 @@ node main.js
 
 Then open [http://localhost:3333](http://localhost:3333) in your browser.
 
+On first launch you will be prompted to create a master password. Save the recovery code shown — it is the only way to regain access if you forget your password.
+
+## Security model
+
+| File | Contents |
+|------|----------|
+| `auth.json` | Master key encrypted twice: once with your password (PBKDF2 + AES-256-GCM), once with the recovery code |
+| `secrets.json` | All TOTP secrets encrypted with the master key (AES-256-GCM) |
+| `session.json` | Session tokens stored as SHA-256 hashes; the master key is encrypted with each token |
+
+The master key exists in RAM only while the app is unlocked. Locking the app clears it.
+
 ## Adding a token
 
-1. Click **+ Add** at the bottom
+1. Tap **+ Add** at the bottom
 2. Enter a name (e.g. `GitHub`) and your TOTP secret
-3. Click **Add** — the code appears immediately
+3. Tap **Add** — the code appears immediately
 
-Secrets are stored in `secrets.json` in the project root. This file is excluded from git.
+## Export / Import
+
+**Export** — tap **Export** to download a `.txt` file with one `otpauth://totp/` URI per line. This file can be imported by any standard TOTP app.
+
+**Import** — tap **Import**, then paste URIs or load a file exported from another app. Choose **Merge** to add new entries (duplicates are skipped by secret value) or **Replace all** to overwrite your current list.
+
+## Auto-lock
+
+Open **⚙ Settings** and choose an inactivity timeout: 1, 3, 5, 10, or 15 minutes (default: 5 min). The app locks itself automatically when there is no mouse, keyboard, or touch activity within that window. Set to **Never** to disable.
 
 ## Project structure
 
 ```
-main.js           Express server + REST API
-index.html        Frontend (single file, no build step)
-secrets.json      Your TOTP secrets (git-ignored)
-secrets.example.json  Example format for secrets.json
+main.js        Express server + REST API
+index.html     Frontend (single file, no build step)
+auth.json      Encrypted master key (git-ignored)
+secrets.json   Encrypted TOTP secrets (git-ignored)
+session.json   Active sessions (git-ignored)
 ```
 
 ## API
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
+| GET | `/api/auth/status` | Returns `{ setup, authenticated }` |
+| POST | `/api/auth/setup` | First-time setup `{ password }` — returns `{ recoveryCode, sessionToken }` |
+| POST | `/api/auth/login` | Login `{ password }` — returns `{ sessionToken }` |
+| POST | `/api/auth/resume` | Resume session `{ sessionToken }` |
+| POST | `/api/auth/recover` | Reset password `{ recoveryCode, newPassword }` |
+| POST | `/api/auth/logout` | Logout and clear session `{ sessionToken }` |
 | GET | `/api/tokens` | Returns all tokens with current codes and time remaining |
 | POST | `/api/secrets` | Add a new secret `{ name, secret }` |
 | DELETE | `/api/secrets/:id` | Remove a secret by id |
+| GET | `/api/export` | Download secrets as `otpauth://` URIs (plain text) |
+| POST | `/api/import` | Import `otpauth://` URIs `{ content, mode: "merge"\|"replace" }` |

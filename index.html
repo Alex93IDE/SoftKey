@@ -25,12 +25,155 @@
       color: var(--text);
       font-family: 'Segoe UI', system-ui, sans-serif;
       min-height: 100vh;
+    }
+
+    /* =====================
+       AUTH OVERLAY VIEWS
+    ===================== */
+    .auth-view {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 100;
+      background: var(--bg);
+      align-items: center;
+      justify-content: center;
+      padding: 24px 16px;
+    }
+
+    .auth-view.active { display: flex; }
+
+    .auth-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 32px 28px;
+      width: 100%;
+      max-width: 420px;
+    }
+
+    .auth-card h1 {
+      font-size: 1.8rem;
+      font-weight: 700;
+      color: var(--accent);
+      letter-spacing: 2px;
+      text-align: center;
+      margin-bottom: 6px;
+    }
+
+    .auth-card h2 {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 6px;
+    }
+
+    .auth-subtitle {
+      color: var(--muted);
+      font-size: 0.85rem;
+      text-align: center;
+      margin-bottom: 28px;
+    }
+
+    .auth-warn {
+      color: var(--warn);
+      font-size: 0.82rem;
+      background: rgba(245,158,11,0.08);
+      border: 1px solid rgba(245,158,11,0.25);
+      border-radius: 8px;
+      padding: 10px 14px;
+      margin-bottom: 20px;
+      line-height: 1.5;
+    }
+
+    /* Spinner */
+    .spinner {
+      width: 40px;
+      height: 40px;
+      border: 3px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Recovery code display */
+    .recovery-box {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 16px;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .recovery-code {
+      font-family: 'Courier New', monospace;
+      font-size: 0.95rem;
+      color: var(--accent);
+      letter-spacing: 1px;
+      flex: 1;
+      word-break: break-all;
+    }
+
+    .copy-small {
+      background: var(--border);
+      border: none;
+      color: var(--text);
+      font-size: 0.78rem;
+      font-weight: 600;
+      padding: 6px 10px;
+      border-radius: 6px;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: background 0.2s;
+      flex-shrink: 0;
+    }
+    .copy-small:hover { background: var(--accent-dim); }
+
+    .checkbox-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 16px;
+      cursor: pointer;
+      font-size: 0.88rem;
+      color: var(--muted);
+    }
+    .checkbox-row input[type="checkbox"] { width: 16px; height: 16px; accent-color: var(--accent); cursor: pointer; }
+
+    .link-btn {
+      width: 100%;
+      background: none;
+      border: none;
+      color: var(--muted);
+      font-size: 0.85rem;
+      cursor: pointer;
+      padding: 10px;
+      margin-top: 4px;
+      border-radius: 8px;
+      transition: color 0.2s;
+    }
+    .link-btn:hover { color: var(--text); }
+
+    /* =====================
+       MAIN APP
+    ===================== */
+    .app-wrap {
       padding: 24px 16px 100px;
+    }
+
+    .container {
+      max-width: 520px;
+      margin: 0 auto;
     }
 
     header {
       text-align: center;
       margin-bottom: 32px;
+      position: relative;
     }
 
     header h1 {
@@ -46,12 +189,24 @@
       margin-top: 4px;
     }
 
-    .container {
-      max-width: 520px;
-      margin: 0 auto;
+    .lock-btn {
+      position: absolute;
+      right: 0;
+      top: 50%;
+      transform: translateY(-50%);
+      background: none;
+      border: none;
+      color: var(--muted);
+      font-size: 1.1rem;
+      cursor: pointer;
+      padding: 6px 8px;
+      border-radius: 8px;
+      transition: color 0.2s, background 0.2s;
+      line-height: 1;
     }
+    .lock-btn:hover { color: var(--text); background: var(--border); }
 
-    /* --- Token cards --- */
+    /* Token cards */
     #tokens-list {
       display: flex;
       flex-direction: column;
@@ -68,8 +223,8 @@
       align-items: center;
       gap: 16px;
       transition: border-color 0.2s;
+      position: relative;
     }
-
     .token-card:hover { border-color: var(--accent-dim); }
 
     .token-info { flex: 1; min-width: 0; }
@@ -94,10 +249,19 @@
       user-select: none;
       transition: color 0.2s;
     }
-
     .token-code:hover { color: var(--accent); }
     .token-code.copied { color: var(--success); }
     .token-code.invalid { color: var(--danger); font-size: 1rem; letter-spacing: 1px; }
+
+    .token-next {
+      position: absolute;
+      bottom: 10px;
+      right: 48px;
+      font-size: 0.72rem;
+      color: var(--muted);
+      font-variant-numeric: tabular-nums;
+      letter-spacing: 1px;
+    }
 
     /* Progress ring */
     .ring-wrap {
@@ -106,14 +270,11 @@
       height: 48px;
       flex-shrink: 0;
     }
-
     .ring-wrap svg { transform: rotate(-90deg); }
-
     .ring-bg { fill: none; stroke: var(--border); stroke-width: 3; }
     .ring-fg { fill: none; stroke: var(--accent); stroke-width: 3; stroke-linecap: round; transition: stroke-dashoffset 0.9s linear, stroke 0.5s; }
     .ring-fg.warn { stroke: var(--warn); }
     .ring-fg.danger { stroke: var(--danger); }
-
     .ring-text {
       position: absolute;
       inset: 0;
@@ -136,7 +297,6 @@
       line-height: 1;
       transition: color 0.2s, background 0.2s;
     }
-
     .delete-btn:hover { color: var(--danger); background: rgba(239,68,68,0.1); }
 
     .empty-state {
@@ -146,7 +306,7 @@
       font-size: 0.9rem;
     }
 
-    /* --- Bottom action bar --- */
+    /* Bottom action bar */
     .action-bar {
       position: fixed;
       bottom: 0;
@@ -156,18 +316,15 @@
       border-top: 1px solid var(--border);
       display: flex;
       justify-content: center;
-      gap: 8px;
       padding: 12px 16px;
       z-index: 10;
     }
-
     .action-bar-inner {
       display: flex;
       gap: 8px;
       width: 100%;
       max-width: 520px;
     }
-
     .menu-btn {
       flex: 1;
       padding: 10px 12px;
@@ -178,19 +335,18 @@
       font-size: 0.88rem;
       font-weight: 600;
       cursor: pointer;
-      transition: background 0.2s, border-color 0.2s, color 0.2s;
+      transition: background 0.2s, border-color 0.2s;
       display: flex;
       align-items: center;
       justify-content: center;
       gap: 6px;
     }
-
     .menu-btn:hover:not(:disabled) { background: var(--border); }
     .menu-btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
     .menu-btn.primary:hover { opacity: 0.85; background: var(--accent); }
     .menu-btn:disabled { opacity: 0.35; cursor: not-allowed; }
 
-    /* --- Modal overlay --- */
+    /* Add token modal */
     .modal-overlay {
       position: fixed;
       inset: 0;
@@ -203,12 +359,7 @@
       pointer-events: none;
       transition: opacity 0.25s;
     }
-
-    .modal-overlay.open {
-      opacity: 1;
-      pointer-events: all;
-    }
-
+    .modal-overlay.open { opacity: 1; pointer-events: all; }
     .modal {
       background: var(--surface);
       border: 1px solid var(--border);
@@ -219,22 +370,14 @@
       transform: translateY(100%);
       transition: transform 0.3s ease;
     }
-
     .modal-overlay.open .modal { transform: translateY(0); }
-
     .modal-header {
       display: flex;
       align-items: center;
       justify-content: space-between;
       margin-bottom: 20px;
     }
-
-    .modal-header h2 {
-      font-size: 1rem;
-      font-weight: 700;
-      color: var(--text);
-    }
-
+    .modal-header h2 { font-size: 1rem; font-weight: 700; }
     .modal-close {
       background: none;
       border: none;
@@ -246,23 +389,21 @@
       transition: color 0.2s;
       line-height: 1;
     }
-
     .modal-close:hover { color: var(--text); }
 
+    /* Shared form styles */
     .field {
       display: flex;
       flex-direction: column;
       gap: 6px;
       margin-bottom: 12px;
     }
-
     .field label {
       font-size: 0.78rem;
       color: var(--muted);
       text-transform: uppercase;
       letter-spacing: 1px;
     }
-
     .field input {
       background: var(--bg);
       border: 1px solid var(--border);
@@ -274,7 +415,6 @@
       transition: border-color 0.2s;
       width: 100%;
     }
-
     .field input:focus { border-color: var(--accent); }
 
     .add-btn {
@@ -290,7 +430,6 @@
       transition: opacity 0.2s;
       margin-top: 4px;
     }
-
     .add-btn:hover { opacity: 0.85; }
     .add-btn:disabled { opacity: 0.4; cursor: not-allowed; }
 
@@ -301,6 +440,23 @@
       display: none;
     }
 
+    /* Auto-lock option buttons */
+    .autolock-opt {
+      padding: 10px 6px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--bg);
+      color: var(--text);
+      font-size: 0.88rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.15s, border-color 0.15s, color 0.15s;
+      text-align: center;
+    }
+    .autolock-opt:hover { background: var(--border); }
+    .autolock-opt.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+
+    /* Toast */
     .toast {
       position: fixed;
       bottom: 80px;
@@ -318,19 +474,99 @@
       opacity: 0;
       visibility: hidden;
     }
-
     .toast.show { opacity: 1; visibility: visible; }
   </style>
 </head>
 <body>
-  <div class="container">
-    <header>
-      <h1>SOFTKEY</h1>
-      <p>Personal 2FA Authenticator</p>
-    </header>
 
-    <div id="tokens-list">
-      <div class="empty-state">Loading tokens...</div>
+  <!-- VIEW: Loading -->
+  <div id="view-loading" class="auth-view active">
+    <div class="spinner"></div>
+  </div>
+
+  <!-- VIEW: Setup (first time) -->
+  <div id="view-setup" class="auth-view">
+    <div class="auth-card">
+      <h1>SOFTKEY</h1>
+      <p class="auth-subtitle">Create a master password to protect your tokens</p>
+      <div class="field">
+        <label>Master Password</label>
+        <input id="setup-password" type="password" placeholder="Min. 8 characters" autocomplete="new-password" />
+      </div>
+      <div class="field">
+        <label>Confirm Password</label>
+        <input id="setup-confirm" type="password" placeholder="Repeat your password" autocomplete="new-password" />
+      </div>
+      <div id="setup-error" class="form-error"></div>
+      <button class="add-btn" id="setup-btn" onclick="doSetup()">Create Password</button>
+    </div>
+  </div>
+
+  <!-- VIEW: Recovery code (shown once after setup) -->
+  <div id="view-recovery-code" class="auth-view">
+    <div class="auth-card">
+      <h2>Save Your Recovery Code</h2>
+      <p class="auth-subtitle" style="text-align:left; margin-bottom: 16px;">If you forget your password, this code lets you set a new one. It will <strong>not be shown again</strong>.</p>
+      <div class="auth-warn">
+        ⚠️ Store this somewhere safe — a password manager, printed paper, or offline backup.
+      </div>
+      <div class="recovery-box">
+        <span class="recovery-code" id="recovery-code-display"></span>
+        <button class="copy-small" id="copy-recovery-btn" onclick="copyRecovery()">Copy</button>
+      </div>
+      <label class="checkbox-row">
+        <input type="checkbox" id="recovery-confirmed" onchange="toggleContinueBtn()" />
+        I have saved the recovery code
+      </label>
+      <button class="add-btn" id="recovery-continue-btn" disabled onclick="onRecoveryContinue()">Continue</button>
+    </div>
+  </div>
+
+  <!-- VIEW: Login -->
+  <div id="view-login" class="auth-view">
+    <div class="auth-card">
+      <h1>SOFTKEY</h1>
+      <p class="auth-subtitle">Enter your master password to unlock</p>
+      <div class="field">
+        <label>Master Password</label>
+        <input id="login-password" type="password" placeholder="Your password" autocomplete="current-password" />
+      </div>
+      <div id="login-error" class="form-error"></div>
+      <button class="add-btn" id="login-btn" onclick="doLogin()">Unlock</button>
+      <button class="link-btn" onclick="showView('view-recover')">Forgot password?</button>
+    </div>
+  </div>
+
+  <!-- VIEW: Recover -->
+  <div id="view-recover" class="auth-view">
+    <div class="auth-card">
+      <h2>Recover Access</h2>
+      <p class="auth-subtitle" style="text-align:left; margin-bottom: 20px;">Use your recovery code to set a new password.</p>
+      <div class="field">
+        <label>Recovery Code</label>
+        <input id="recover-code" type="text" placeholder="xxxxxxxx-xxxxxxxx-..." autocomplete="off" />
+      </div>
+      <div class="field">
+        <label>New Password</label>
+        <input id="recover-password" type="password" placeholder="Min. 8 characters" autocomplete="new-password" />
+      </div>
+      <div id="recover-error" class="form-error"></div>
+      <button class="add-btn" id="recover-btn" onclick="doRecover()">Reset Password</button>
+      <button class="link-btn" onclick="showView('view-login')">← Back to login</button>
+    </div>
+  </div>
+
+  <!-- MAIN APP -->
+  <div class="app-wrap">
+    <div class="container">
+      <header>
+        <h1>SOFTKEY</h1>
+        <p>Personal 2FA Authenticator</p>
+        <button class="lock-btn" onclick="doLogout()" title="Lock">🔒</button>
+      </header>
+      <div id="tokens-list">
+        <div class="empty-state">Loading tokens...</div>
+      </div>
     </div>
   </div>
 
@@ -339,7 +575,8 @@
     <div class="action-bar-inner">
       <button class="menu-btn primary" onclick="openModal()">＋ Add</button>
       <button class="menu-btn" onclick="exportTokens()">Export</button>
-      <button class="menu-btn" disabled title="Coming soon">Import</button>
+      <button class="menu-btn" onclick="openImportModal()">Import</button>
+      <button class="menu-btn" onclick="openSettingsModal()">⚙ Settings</button>
     </div>
   </div>
 
@@ -363,6 +600,62 @@
     </div>
   </div>
 
+  <!-- Import modal -->
+  <div class="modal-overlay" id="import-overlay" onclick="handleImportOverlayClick(event)">
+    <div class="modal">
+      <div class="modal-header">
+        <h2>Import Tokens</h2>
+        <button class="modal-close" onclick="closeImportModal()">&#x2715;</button>
+      </div>
+      <p style="font-size:0.82rem;color:var(--muted);margin-bottom:14px;line-height:1.5;">
+        Paste or load a file with <code style="color:var(--accent);background:var(--bg);padding:1px 5px;border-radius:4px;">otpauth://</code> URIs (one per line).<br>
+        Compatible with Google Authenticator, Proton Pass, Aegis, Authy exports.
+      </p>
+      <div class="field">
+        <label>File</label>
+        <input id="import-file" type="file" accept=".txt,.json" style="background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);padding:8px 12px;font-size:0.88rem;width:100%;cursor:pointer;" onchange="onImportFile(event)" />
+      </div>
+      <div class="field">
+        <label>Or paste content</label>
+        <textarea id="import-content" rows="5" placeholder="otpauth://totp/GitHub?secret=JBSWY3DP&issuer=GitHub&#10;otpauth://totp/Google?secret=..." style="background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);padding:10px 14px;font-size:0.82rem;font-family:'Courier New',monospace;outline:none;transition:border-color 0.2s;width:100%;resize:vertical;" oninput="updateImportPreview()"></textarea>
+      </div>
+      <div id="import-preview" style="font-size:0.82rem;color:var(--muted);margin-bottom:10px;min-height:18px;"></div>
+      <div style="display:flex;gap:8px;margin-bottom:14px;">
+        <label style="display:flex;align-items:center;gap:6px;font-size:0.85rem;cursor:pointer;">
+          <input type="radio" name="import-mode" value="merge" checked style="accent-color:var(--accent);" /> Merge (skip duplicates)
+        </label>
+        <label style="display:flex;align-items:center;gap:6px;font-size:0.85rem;cursor:pointer;">
+          <input type="radio" name="import-mode" value="replace" style="accent-color:var(--accent);" /> Replace all
+        </label>
+      </div>
+      <div id="import-error" class="form-error"></div>
+      <button class="add-btn" id="import-btn" onclick="doImport()">Import</button>
+    </div>
+  </div>
+
+  <!-- Settings modal -->
+  <div class="modal-overlay" id="settings-overlay" onclick="handleSettingsOverlayClick(event)">
+    <div class="modal">
+      <div class="modal-header">
+        <h2>Settings</h2>
+        <button class="modal-close" onclick="closeSettingsModal()">&#x2715;</button>
+      </div>
+
+      <div style="margin-bottom: 6px;">
+        <div style="font-size:0.78rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:12px;">Auto-lock</div>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;" id="autolock-options">
+          <button class="autolock-opt" data-min="0" onclick="setAutolock(0)">Never</button>
+          <button class="autolock-opt" data-min="1" onclick="setAutolock(1)">1 min</button>
+          <button class="autolock-opt" data-min="3" onclick="setAutolock(3)">3 min</button>
+          <button class="autolock-opt" data-min="5" onclick="setAutolock(5)">5 min</button>
+          <button class="autolock-opt" data-min="10" onclick="setAutolock(10)">10 min</button>
+          <button class="autolock-opt" data-min="15" onclick="setAutolock(15)">15 min</button>
+        </div>
+        <p id="autolock-hint" style="font-size:0.8rem;color:var(--muted);margin-top:12px;line-height:1.4;"></p>
+      </div>
+    </div>
+  </div>
+
   <div class="toast" id="toast"></div>
 
   <script>
@@ -371,10 +664,266 @@
 
     let tokens = [];
     let timeRemaining = 30;
+    let recoveryCodeValue = '';
+
+    // =====================
+    // VIEW MANAGEMENT
+    // =====================
+
+    function showView(id) {
+      document.querySelectorAll('.auth-view').forEach(v => v.classList.remove('active'));
+      if (id) document.getElementById(id).classList.add('active');
+    }
+
+    // =====================
+    // AUTH INIT
+    // =====================
+
+    async function initAuth() {
+      try {
+        // Try to resume an existing session first
+        const saved = localStorage.getItem('sk_session');
+        if (saved) {
+          const res = await fetch('/api/auth/resume', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ sessionToken: saved }),
+          });
+          if (res.ok) {
+            showView(null);
+            fetchTokens();
+            return;
+          }
+          // Session expired or invalid — clear it
+          localStorage.removeItem('sk_session');
+        }
+
+        // Fall back to status check
+        const res = await fetch('/api/auth/status');
+        const { setup } = await res.json();
+        if (!setup) {
+          showView('view-setup');
+          setTimeout(() => document.getElementById('setup-password').focus(), 100);
+        } else {
+          showView('view-login');
+          setTimeout(() => document.getElementById('login-password').focus(), 100);
+        }
+      } catch {
+        showView('view-login');
+      }
+    }
+
+    // =====================
+    // SETUP
+    // =====================
+
+    async function doSetup() {
+      const password = document.getElementById('setup-password').value;
+      const confirm  = document.getElementById('setup-confirm').value;
+      const errEl    = document.getElementById('setup-error');
+      const btn      = document.getElementById('setup-btn');
+
+      errEl.style.display = 'none';
+
+      if (password.length < 8) {
+        errEl.textContent = 'Password must be at least 8 characters.';
+        errEl.style.display = 'block';
+        return;
+      }
+      if (password !== confirm) {
+        errEl.textContent = 'Passwords do not match.';
+        errEl.style.display = 'block';
+        return;
+      }
+
+      btn.disabled = true;
+      btn.textContent = 'Creating...';
+
+      try {
+        const res = await fetch('/api/auth/setup', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ password }),
+        });
+        const data = await res.json();
+
+        if (!res.ok) {
+          errEl.textContent = data.error || 'Setup failed.';
+          errEl.style.display = 'block';
+          return;
+        }
+
+        if (data.sessionToken) localStorage.setItem('sk_session', data.sessionToken);
+        recoveryCodeValue = data.recoveryCode;
+        document.getElementById('recovery-code-display').textContent = formatRecoveryCode(data.recoveryCode);
+        document.getElementById('recovery-confirmed').checked = false;
+        document.getElementById('recovery-continue-btn').disabled = true;
+        showView('view-recovery-code');
+      } catch {
+        errEl.textContent = 'Connection error.';
+        errEl.style.display = 'block';
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Create Password';
+      }
+    }
+
+    function formatRecoveryCode(code) {
+      return code.match(/.{1,8}/g).join('-');
+    }
+
+    async function copyRecovery() {
+      try {
+        await navigator.clipboard.writeText(recoveryCodeValue);
+        const btn = document.getElementById('copy-recovery-btn');
+        btn.textContent = 'Copied!';
+        setTimeout(() => { btn.textContent = 'Copy'; }, 1500);
+      } catch {
+        showToast('Could not copy');
+      }
+    }
+
+    function toggleContinueBtn() {
+      const checked = document.getElementById('recovery-confirmed').checked;
+      document.getElementById('recovery-continue-btn').disabled = !checked;
+    }
+
+    function onRecoveryContinue() {
+      recoveryCodeValue = '';
+      showView(null);
+      fetchTokens();
+    }
+
+    // =====================
+    // LOGIN
+    // =====================
+
+    async function doLogin() {
+      const password = document.getElementById('login-password').value;
+      const errEl    = document.getElementById('login-error');
+      const btn      = document.getElementById('login-btn');
+
+      errEl.style.display = 'none';
+
+      if (!password) {
+        errEl.textContent = 'Password is required.';
+        errEl.style.display = 'block';
+        return;
+      }
+
+      btn.disabled = true;
+      btn.textContent = 'Unlocking...';
+
+      try {
+        const res = await fetch('/api/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ password }),
+        });
+        const data = await res.json();
+
+        if (!res.ok) {
+          errEl.textContent = data.error || 'Login failed.';
+          errEl.style.display = 'block';
+          return;
+        }
+
+        document.getElementById('login-password').value = '';
+        if (data.sessionToken) localStorage.setItem('sk_session', data.sessionToken);
+        showView(null);
+        fetchTokens();
+      } catch {
+        errEl.textContent = 'Connection error.';
+        errEl.style.display = 'block';
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Unlock';
+      }
+    }
+
+    // =====================
+    // RECOVER
+    // =====================
+
+    async function doRecover() {
+      const recoveryCode  = document.getElementById('recover-code').value.replace(/[^a-fA-F0-9]/g, '');
+      const newPassword   = document.getElementById('recover-password').value;
+      const errEl         = document.getElementById('recover-error');
+      const btn           = document.getElementById('recover-btn');
+
+      errEl.style.display = 'none';
+
+      if (!recoveryCode || !newPassword) {
+        errEl.textContent = 'All fields are required.';
+        errEl.style.display = 'block';
+        return;
+      }
+      if (newPassword.length < 8) {
+        errEl.textContent = 'Password must be at least 8 characters.';
+        errEl.style.display = 'block';
+        return;
+      }
+
+      btn.disabled = true;
+      btn.textContent = 'Recovering...';
+
+      try {
+        const res = await fetch('/api/auth/recover', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ recoveryCode, newPassword }),
+        });
+        const data = await res.json();
+
+        if (!res.ok) {
+          errEl.textContent = data.error || 'Recovery failed.';
+          errEl.style.display = 'block';
+          return;
+        }
+
+        document.getElementById('recover-code').value = '';
+        document.getElementById('recover-password').value = '';
+        if (data.sessionToken) localStorage.setItem('sk_session', data.sessionToken);
+        showView(null);
+        fetchTokens();
+      } catch {
+        errEl.textContent = 'Connection error.';
+        errEl.style.display = 'block';
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Reset Password';
+      }
+    }
+
+    // =====================
+    // LOGOUT
+    // =====================
+
+    async function doLogout() {
+      const sessionToken = localStorage.getItem('sk_session');
+      localStorage.removeItem('sk_session');
+      await fetch('/api/auth/logout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sessionToken }),
+      });
+      tokens = [];
+      renderTokens();
+      showView('view-login');
+      setTimeout(() => document.getElementById('login-password').focus(), 100);
+    }
+
+    // =====================
+    // TOKENS
+    // =====================
 
     async function fetchTokens() {
       try {
         const res = await fetch('/api/tokens');
+        if (res.status === 401) {
+          if (!document.querySelector('.auth-view.active')) showView('view-login');
+          return;
+        }
         const data = await res.json();
         tokens = data.tokens;
         timeRemaining = data.timeRemaining;
@@ -393,12 +942,13 @@
       }
 
       list.innerHTML = tokens.map(t => {
-        const pct = timeRemaining / 30;
-        const offset = CIRC * (1 - pct);
-        const ringClass = timeRemaining <= 5 ? 'danger' : timeRemaining <= 10 ? 'warn' : '';
-        const code = t.token || 'ERROR';
-        const codeClass = t.token ? '' : 'invalid';
-        const formatted = t.token ? t.token.slice(0, 3) + ' ' + t.token.slice(3) : 'Invalid';
+        const pct         = timeRemaining / 30;
+        const offset      = CIRC * (1 - pct);
+        const ringClass   = timeRemaining <= 5 ? 'danger' : timeRemaining <= 10 ? 'warn' : '';
+        const code        = t.token || 'ERROR';
+        const codeClass   = t.token ? '' : 'invalid';
+        const formatted   = t.token ? t.token.slice(0,3) + ' ' + t.token.slice(3) : 'Invalid';
+        const nextFmt     = t.nextToken ? t.nextToken.slice(0,3) + ' ' + t.nextToken.slice(3) : '—';
 
         return `
           <div class="token-card" id="card-${t.id}">
@@ -406,14 +956,15 @@
               <svg width="48" height="48" viewBox="0 0 48 48">
                 <circle class="ring-bg" cx="24" cy="24" r="${RADIUS}" />
                 <circle class="ring-fg ${ringClass}" cx="24" cy="24" r="${RADIUS}"
-                  stroke-dasharray="${CIRC}"
-                  stroke-dashoffset="${offset}" />
+                  stroke-dasharray="${CIRC}" stroke-dashoffset="${offset}" />
               </svg>
               <div class="ring-text">${timeRemaining}</div>
             </div>
             <div class="token-info">
               <div class="token-name">${escHtml(t.name)}</div>
-              <div class="token-code ${codeClass}" title="Click to copy" onclick="copyToken('${t.id}', '${code}', this)">${formatted}</div>
+              <div class="token-code ${codeClass}" title="Click to copy"
+                   onclick="copyToken('${t.id}', '${code}', this)">${formatted}</div>
+              <div class="token-next">next: ${nextFmt}</div>
             </div>
             <button class="delete-btn" title="Delete" onclick="deleteToken('${t.id}')">&#x2715;</button>
           </div>
@@ -423,13 +974,9 @@
 
     function updateCountdown() {
       const sec = 30 - (Math.floor(Date.now() / 1000) % 30);
-
       if (sec !== timeRemaining) {
         timeRemaining = sec;
-        if (sec === 30) {
-          fetchTokens();
-          return;
-        }
+        if (sec === 30) { fetchTokens(); return; }
         renderTokens();
       }
     }
@@ -443,7 +990,7 @@
         setTimeout(() => {
           el.classList.remove('copied');
           const t = tokens.find(x => x.id === id);
-          if (t && t.token) el.textContent = t.token.slice(0, 3) + ' ' + t.token.slice(3);
+          if (t && t.token) el.textContent = t.token.slice(0,3) + ' ' + t.token.slice(3);
         }, 1200);
       } catch {
         showToast('Could not copy');
@@ -451,10 +998,10 @@
     }
 
     async function addToken() {
-      const name = document.getElementById('inp-name').value.trim();
+      const name  = document.getElementById('inp-name').value.trim();
       const secret = document.getElementById('inp-secret').value.trim();
-      const errEl = document.getElementById('form-error');
-      const btn = document.getElementById('add-btn');
+      const errEl  = document.getElementById('form-error');
+      const btn    = document.getElementById('add-btn');
 
       errEl.style.display = 'none';
 
@@ -503,17 +1050,185 @@
       }
     }
 
-    function exportTokens() {
+    async function exportTokens() {
       if (tokens.length === 0) { showToast('No tokens to export'); return; }
-      const data = JSON.stringify(tokens.map(t => ({ id: t.id, name: t.name })), null, 2);
-      const blob = new Blob([data], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'softkey-export.json';
-      a.click();
-      URL.revokeObjectURL(url);
+      try {
+        const res = await fetch('/api/export');
+        if (!res.ok) { showToast('Export failed'); return; }
+        const text = await res.text();
+        const blob = new Blob([text], { type: 'text/plain' });
+        const url  = URL.createObjectURL(blob);
+        const a    = document.createElement('a');
+        a.href = url;
+        a.download = 'softkey-export.txt';
+        a.click();
+        URL.revokeObjectURL(url);
+        showToast(`Exported ${tokens.length} token${tokens.length !== 1 ? 's' : ''}`);
+      } catch {
+        showToast('Export failed');
+      }
     }
+
+    // =====================
+    // IMPORT MODAL
+    // =====================
+
+    function openImportModal() {
+      document.getElementById('import-overlay').classList.add('open');
+      document.getElementById('import-content').value = '';
+      document.getElementById('import-file').value = '';
+      document.getElementById('import-preview').textContent = '';
+      document.getElementById('import-error').style.display = 'none';
+      document.querySelector('input[name="import-mode"][value="merge"]').checked = true;
+    }
+
+    function closeImportModal() {
+      document.getElementById('import-overlay').classList.remove('open');
+    }
+
+    function handleImportOverlayClick(e) {
+      if (e.target === document.getElementById('import-overlay')) closeImportModal();
+    }
+
+    function onImportFile(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = e => {
+        document.getElementById('import-content').value = e.target.result;
+        updateImportPreview();
+      };
+      reader.readAsText(file);
+    }
+
+    function updateImportPreview() {
+      const content = document.getElementById('import-content').value;
+      const count = content.split(/\r?\n/).filter(l => l.trim().startsWith('otpauth://totp/')).length;
+      const preview = document.getElementById('import-preview');
+      if (count === 0) {
+        preview.textContent = content.trim() ? 'No valid otpauth:// URIs found.' : '';
+        preview.style.color = 'var(--danger)';
+      } else {
+        preview.textContent = `${count} token${count !== 1 ? 's' : ''} found`;
+        preview.style.color = 'var(--success)';
+      }
+    }
+
+    async function doImport() {
+      const content = document.getElementById('import-content').value.trim();
+      const mode    = document.querySelector('input[name="import-mode"]:checked').value;
+      const errEl   = document.getElementById('import-error');
+      const btn     = document.getElementById('import-btn');
+
+      errEl.style.display = 'none';
+
+      if (!content) {
+        errEl.textContent = 'Paste content or select a file.';
+        errEl.style.display = 'block';
+        return;
+      }
+
+      btn.disabled = true;
+      btn.textContent = 'Importing...';
+
+      try {
+        const res = await fetch('/api/import', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ content, mode }),
+        });
+        const data = await res.json();
+
+        if (!res.ok) {
+          errEl.textContent = data.error || 'Import failed.';
+          errEl.style.display = 'block';
+          return;
+        }
+
+        closeImportModal();
+        let msg = `Imported ${data.imported} token${data.imported !== 1 ? 's' : ''}`;
+        if (data.skipped > 0) msg += ` (${data.skipped} duplicate${data.skipped !== 1 ? 's' : ''} skipped)`;
+        showToast(msg);
+        await fetchTokens();
+      } catch {
+        errEl.textContent = 'Connection error.';
+        errEl.style.display = 'block';
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Import';
+      }
+    }
+
+    // =====================
+    // SETTINGS MODAL
+    // =====================
+
+    function openSettingsModal() {
+      renderAutolockOptions();
+      document.getElementById('settings-overlay').classList.add('open');
+    }
+
+    function closeSettingsModal() {
+      document.getElementById('settings-overlay').classList.remove('open');
+    }
+
+    function handleSettingsOverlayClick(e) {
+      if (e.target === document.getElementById('settings-overlay')) closeSettingsModal();
+    }
+
+    function renderAutolockOptions() {
+      const current = getAutolockMin();
+      document.querySelectorAll('.autolock-opt').forEach(btn => {
+        btn.classList.toggle('active', parseInt(btn.dataset.min) === current);
+      });
+      updateAutolockHint(current);
+    }
+
+    function setAutolock(minutes) {
+      localStorage.setItem('sk_autolock', minutes);
+      renderAutolockOptions();
+      resetAutolockTimer();
+    }
+
+    function getAutolockMin() {
+      const v = localStorage.getItem('sk_autolock');
+      return v === null ? 5 : parseInt(v); // default 5 min
+    }
+
+    function updateAutolockHint(minutes) {
+      const hint = document.getElementById('autolock-hint');
+      hint.textContent = minutes === 0
+        ? 'The app will never lock automatically.'
+        : `The app will lock after ${minutes} minute${minutes !== 1 ? 's' : ''} of inactivity.`;
+    }
+
+    // =====================
+    // AUTO-LOCK TIMER
+    // =====================
+
+    let autolockTimer = null;
+
+    function resetAutolockTimer() {
+      if (autolockTimer) { clearTimeout(autolockTimer); autolockTimer = null; }
+      const minutes = getAutolockMin();
+      if (minutes === 0) return;
+      autolockTimer = setTimeout(() => {
+        // Only lock if the user is actually logged in (no auth view showing)
+        if (!document.querySelector('.auth-view.active')) {
+          showToast('Locked due to inactivity');
+          setTimeout(doLogout, 800);
+        }
+      }, minutes * 60 * 1000);
+    }
+
+    // Reset timer on any user activity
+    ['mousemove', 'mousedown', 'keydown', 'touchstart', 'scroll', 'click'].forEach(evt => {
+      document.addEventListener(evt, resetAutolockTimer, { passive: true });
+    });
+
+    // =====================
+    // MODAL
+    // =====================
 
     function openModal() {
       document.getElementById('modal-overlay').classList.add('open');
@@ -529,6 +1244,10 @@
       if (e.target === document.getElementById('modal-overlay')) closeModal();
     }
 
+    // =====================
+    // UTILS
+    // =====================
+
     function showToast(msg) {
       const t = document.getElementById('toast');
       t.textContent = msg;
@@ -541,15 +1260,23 @@
     }
 
     document.addEventListener('keydown', e => {
-      if (e.key === 'Escape') closeModal();
-      if (e.key === 'Enter' && (document.activeElement.id === 'inp-name' || document.activeElement.id === 'inp-secret')) {
-        addToken();
+      if (e.key === 'Escape') { closeModal(); closeImportModal(); closeSettingsModal(); }
+      if (e.key === 'Enter') {
+        const id = document.activeElement.id;
+        if (id === 'inp-name' || id === 'inp-secret')        addToken();
+        else if (id === 'setup-password' || id === 'setup-confirm') doSetup();
+        else if (id === 'login-password')                    doLogin();
+        else if (id === 'recover-code' || id === 'recover-password') doRecover();
       }
     });
 
-    fetchTokens();
+    // =====================
+    // START
+    // =====================
+    initAuth();
     setInterval(updateCountdown, 500);
     setInterval(fetchTokens, 30000);
+    resetAutolockTimer();
   </script>
 </body>
 </html>
