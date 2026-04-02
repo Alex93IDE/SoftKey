@@ -229,12 +229,20 @@
 
     .token-info { flex: 1; min-width: 0; }
 
-    .token-name {
-      font-size: 0.78rem;
+    .token-issuer {
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 1px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .token-account {
+      font-size: 0.75rem;
       color: var(--muted);
-      text-transform: uppercase;
-      letter-spacing: 1px;
-      margin-bottom: 4px;
+      margin-bottom: 3px;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
@@ -588,8 +596,12 @@
         <button class="modal-close" onclick="closeModal()">&#x2715;</button>
       </div>
       <div class="field">
-        <label>Name</label>
-        <input id="inp-name" type="text" placeholder="Google, GitHub, etc." autocomplete="off" />
+        <label>Service / Issuer</label>
+        <input id="inp-name" type="text" placeholder="Google, GitHub, Stripe..." autocomplete="off" />
+      </div>
+      <div class="field">
+        <label>Account <span style="color:var(--muted);font-weight:400;text-transform:none;letter-spacing:0">(optional)</span></label>
+        <input id="inp-account" type="text" placeholder="user@email.com" autocomplete="off" />
       </div>
       <div class="field">
         <label>TOTP Secret</label>
@@ -942,9 +954,10 @@
       }
 
       list.innerHTML = tokens.map(t => {
-        const pct         = timeRemaining / 30;
+        const tr          = t.timeRemaining;
+        const pct         = tr / (t.period || 30);
         const offset      = CIRC * (1 - pct);
-        const ringClass   = timeRemaining <= 5 ? 'danger' : timeRemaining <= 10 ? 'warn' : '';
+        const ringClass   = tr <= 5 ? 'danger' : tr <= 10 ? 'warn' : '';
         const code        = t.token || 'ERROR';
         const codeClass   = t.token ? '' : 'invalid';
         const formatted   = t.token ? t.token.slice(0,3) + ' ' + t.token.slice(3) : 'Invalid';
@@ -958,10 +971,11 @@
                 <circle class="ring-fg ${ringClass}" cx="24" cy="24" r="${RADIUS}"
                   stroke-dasharray="${CIRC}" stroke-dashoffset="${offset}" />
               </svg>
-              <div class="ring-text">${timeRemaining}</div>
+              <div class="ring-text">${tr}</div>
             </div>
             <div class="token-info">
-              <div class="token-name">${escHtml(t.name)}</div>
+              <div class="token-issuer">${escHtml(t.issuer)}</div>
+              ${t.account ? `<div class="token-account">${escHtml(t.account)}</div>` : ''}
               <div class="token-code ${codeClass}" title="Click to copy"
                    onclick="copyToken('${t.id}', '${code}', this)">${formatted}</div>
               <div class="token-next">next: ${nextFmt}</div>
@@ -1014,10 +1028,11 @@
       btn.disabled = true;
 
       try {
+        const account = document.getElementById('inp-account').value.trim();
         const res = await fetch('/api/secrets', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name, secret }),
+          body: JSON.stringify({ name, secret, issuer: name, account }),
         });
         const data = await res.json();
 
@@ -1028,6 +1043,7 @@
         }
 
         document.getElementById('inp-name').value = '';
+        document.getElementById('inp-account').value = '';
         document.getElementById('inp-secret').value = '';
         closeModal();
         showToast('Token added');
@@ -1102,11 +1118,21 @@
     }
 
     function updateImportPreview() {
-      const content = document.getElementById('import-content').value;
-      const count = content.split(/\r?\n/).filter(l => l.trim().startsWith('otpauth://totp/')).length;
+      const content = document.getElementById('import-content').value.trim();
       const preview = document.getElementById('import-preview');
+      if (!content) { preview.textContent = ''; return; }
+
+      let count = 0;
+      try {
+        const parsed = JSON.parse(content);
+        if (Array.isArray(parsed.entries)) {
+          count = parsed.entries.filter(e => e?.content?.uri?.startsWith('otpauth://totp/')).length;
+        }
+      } catch { /* plain text */ }
+      if (count === 0) count = content.split(/\r?\n/).filter(l => l.trim().startsWith('otpauth://totp/')).length;
+
       if (count === 0) {
-        preview.textContent = content.trim() ? 'No valid otpauth:// URIs found.' : '';
+        preview.textContent = 'No valid otpauth:// URIs found.';
         preview.style.color = 'var(--danger)';
       } else {
         preview.textContent = `${count} token${count !== 1 ? 's' : ''} found`;
