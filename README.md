@@ -1,21 +1,6 @@
 # Softkey
 
-A minimal, self-hosted personal 2FA authenticator that runs locally in your browser. No cloud, no accounts, no phone required.
-
-## Features
-
-- Generate TOTP codes (RFC 6238) for any service
-- Visual countdown ring and next-code preview per token
-- Click any code to copy it to clipboard
-- AES-256-GCM encrypted storage protected by a master password
-- Locks automatically when the browser tab is closed — session is never persisted across page opens
-- Account recovery via one-time recovery code
-- Export tokens as standard `otpauth://` URIs (compatible with Google Authenticator, Proton Pass, Aegis, Authy, etc.)
-- Import tokens from any app that exports `otpauth://` URIs
-- Auto-lock after configurable inactivity period (1, 3, 5, 10, or 15 minutes)
-- Runs entirely on your machine — secrets never leave it
-
-## Screenshots
+I got tired of depending on my phone for 2FA. So I built this — a tiny self-hosted TOTP authenticator that runs in your browser, on your own machine, with no phone, no cloud, and no account required.
 
 <table>
   <tr>
@@ -30,24 +15,12 @@ A minimal, self-hosted personal 2FA authenticator that runs locally in your brow
   </tr>
 </table>
 
-## Requirements
-
-- Node.js 18+ **or** Docker
-
 ## Setup
 
-### With Docker (recommended)
+### Docker
 
 ```bash
 docker compose up -d
-```
-
-Data files (`auth.json`, `secrets.json`, `session.json`) are stored in `./data/` on the host and persist across restarts.
-
-**To update after a `git pull`:**
-
-```bash
-docker compose up -d --build
 ```
 
 ### Without Docker
@@ -57,69 +30,16 @@ npm install
 node main.js
 ```
 
-Then open [http://localhost:3333](http://localhost:3333) in your browser.
+Open [http://localhost:3333](http://localhost:3333). On first launch you'll create a master password — **save the recovery code**, it's the only way back in if you forget it.
 
-On first launch you will be prompted to create a master password. Save the recovery code shown — it is the only way to regain access if you forget your password.
+## A few things worth knowing
 
-## Security model
+- Everything is encrypted with AES-256-GCM. Secrets never leave your machine.
+- The app locks itself when you close the tab, and auto-locks after inactivity.
+- Export/import works with any app that supports `otpauth://` URIs (Google Authenticator, Aegis, Proton Pass, Authy...).
 
-| File | Contents |
-|------|----------|
-| `auth.json` | Master key encrypted twice: once with your password (PBKDF2 + AES-256-GCM), once with the recovery code |
-| `secrets.json` | All TOTP secrets encrypted with the master key (AES-256-GCM) |
-| `session.json` | Session tokens stored as SHA-256 hashes; the master key is encrypted with each token |
+## If this is useful to you
 
-The master key exists in RAM only while the app is unlocked. Locking the app clears it.
-
-## Adding a token
-
-1. Tap **+ Add** at the bottom
-2. Enter a name (e.g. `GitHub`) and your TOTP secret
-3. Tap **Add** — the code appears immediately
-
-## Export / Import
-
-**Export** — tap **Export** to download a `.txt` file with one `otpauth://totp/` URI per line. This file can be imported by any standard TOTP app.
-
-**Import** — tap **Import**, then paste URIs or load a file exported from another app. Choose **Merge** to add new entries (duplicates are skipped by secret value) or **Replace all** to overwrite your current list.
-
-## Auto-lock
-
-Open **⚙ Settings** and choose an inactivity timeout: 1, 3, 5, 10, or 15 minutes (default: 5 min). The app locks itself automatically when there is no mouse, keyboard, or touch activity within that window. Set to **Never** to disable.
-
-## Project structure
-
-```
-main.js              Entry point — Express setup and route mounting
-lib/
-  crypto.js          AES-256-GCM and PBKDF2 helpers
-  sessions.js        Session create / resume / delete
-  totp.js            TOTP code generation
-  state.js           In-memory master key
-routes/
-  auth.js            /api/auth/* endpoints
-  tokens.js          /api/tokens, /api/secrets, /api/export, /api/import
-public/
-  index.html         App shell (HTML only)
-  style.css          All styles
-  app.js             All frontend logic
-auth.json            Encrypted master key (git-ignored)
-secrets.json         Encrypted TOTP secrets (git-ignored)
-session.json         Active sessions (git-ignored)
-```
-
-## API
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/auth/status` | Returns `{ setup, authenticated }` |
-| POST | `/api/auth/setup` | First-time setup `{ password }` — returns `{ recoveryCode, sessionToken }` |
-| POST | `/api/auth/login` | Login `{ password }` — returns `{ sessionToken }` |
-| POST | `/api/auth/resume` | Resume session `{ sessionToken }` |
-| POST | `/api/auth/recover` | Reset password `{ recoveryCode, newPassword }` |
-| POST | `/api/auth/logout` | Logout and clear session `{ sessionToken }` |
-| GET | `/api/tokens` | Returns all tokens with current codes and time remaining |
-| POST | `/api/secrets` | Add a new secret `{ name, secret }` |
-| DELETE | `/api/secrets/:id` | Remove a secret by id |
-| GET | `/api/export` | Download secrets as `otpauth://` URIs (plain text) |
-| POST | `/api/import` | Import `otpauth://` URIs `{ content, mode: "merge"\|"replace" }` |
+- Star the repo
+- Open an issue if something breaks or you want a feature
+- [Sponsor development](https://github.com/sponsors/Alex93IDE)
