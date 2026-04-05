@@ -1,6 +1,6 @@
 # Softkey
 
-I got tired of depending on my phone for 2FA. So I built this — a tiny self-hosted TOTP authenticator that runs in your browser, on your own machine, with no phone, no cloud, and no account required.
+A self-hosted TOTP authenticator that runs in your browser. No phone, no cloud, no account required — your 2FA codes live on your own machine, encrypted, and accessible from any tab.
 
 <table>
   <tr>
@@ -32,11 +32,16 @@ node main.js
 
 Open [http://localhost:3333](http://localhost:3333). On first launch you'll create a master password — **save the recovery code**, it's the only way back in if you forget it.
 
-## A few things worth knowing
+## How it works
 
-- Everything is encrypted with AES-256-GCM. Secrets never leave your machine.
-- The app locks itself when you close the tab, and auto-locks after inactivity.
-- Export/import works with any app that supports `otpauth://` URIs (Google Authenticator, Aegis, Proton Pass, Authy...).
+Your TOTP secrets are encrypted with AES-256-GCM using a key derived from your master password. The encrypted file stays on disk; the decryption key lives in memory only — it's never written anywhere. Close the tab and the vault locks itself. There's also a configurable inactivity timeout.
+
+No telemetry, no network calls, no sync service. If you want to verify that, the codebase is small enough to read in an hour.
+
+## Import / Export
+
+Softkey uses standard `otpauth://totp/` URIs, the same format as Google Authenticator, Aegis, Proton Pass, and Authy. You can migrate in or out at any time without friction.
+
 
 ## If this is useful to you
 

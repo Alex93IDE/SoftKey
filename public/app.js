@@ -1,5 +1,5 @@
 const RADIUS = 20;
-const CIRC   = 2 * Math.PI * RADIUS;
+const CIRC = 2 * Math.PI * RADIUS;
 
 let tokens = [];
 let timeRemaining = 30;
@@ -61,9 +61,9 @@ async function initAuth() {
 
 async function doSetup() {
   const password = document.getElementById('setup-password').value;
-  const confirm  = document.getElementById('setup-confirm').value;
-  const errEl    = document.getElementById('setup-error');
-  const btn      = document.getElementById('setup-btn');
+  const confirm = document.getElementById('setup-confirm').value;
+  const errEl = document.getElementById('setup-error');
+  const btn = document.getElementById('setup-btn');
 
   errEl.style.display = 'none';
 
@@ -142,8 +142,8 @@ function onRecoveryContinue() {
 
 async function doLogin() {
   const password = document.getElementById('login-password').value;
-  const errEl    = document.getElementById('login-error');
-  const btn      = document.getElementById('login-btn');
+  const errEl = document.getElementById('login-error');
+  const btn = document.getElementById('login-btn');
 
   errEl.style.display = 'none';
 
@@ -189,9 +189,9 @@ async function doLogin() {
 
 async function doRecover() {
   const recoveryCode = document.getElementById('recover-code').value.replace(/[^a-fA-F0-9]/g, '');
-  const newPassword  = document.getElementById('recover-password').value;
-  const errEl        = document.getElementById('recover-error');
-  const btn          = document.getElementById('recover-btn');
+  const newPassword = document.getElementById('recover-password').value;
+  const errEl = document.getElementById('recover-error');
+  const btn = document.getElementById('recover-btn');
 
   errEl.style.display = 'none';
 
@@ -267,7 +267,7 @@ async function fetchTokens() {
       return;
     }
     const data = await res.json();
-    tokens        = data.tokens;
+    tokens = data.tokens;
     timeRemaining = data.timeRemaining;
     renderTokens();
   } catch {
@@ -284,14 +284,14 @@ function renderTokens() {
   }
 
   list.innerHTML = tokens.map(t => {
-    const tr        = t.timeRemaining;
-    const pct       = tr / (t.period || 30);
-    const offset    = CIRC * (1 - pct);
+    const tr = t.timeRemaining;
+    const pct = tr / (t.period || 30);
+    const offset = CIRC * (1 - pct);
     const ringClass = tr <= 5 ? 'danger' : tr <= 10 ? 'warn' : '';
-    const code      = t.token || 'ERROR';
+    const code = t.token || 'ERROR';
     const codeClass = t.token ? '' : 'invalid';
-    const formatted = t.token ? t.token.slice(0,3) + ' ' + t.token.slice(3) : 'Invalid';
-    const nextFmt   = t.nextToken ? t.nextToken.slice(0,3) + ' ' + t.nextToken.slice(3) : '—';
+    const formatted = t.token ? t.token.slice(0, 3) + ' ' + t.token.slice(3) : 'Invalid';
+    const nextFmt = t.nextToken ? t.nextToken.slice(0, 3) + ' ' + t.nextToken.slice(3) : '—';
 
     return `
       <div class="token-card" id="card-${t.id}">
@@ -339,7 +339,7 @@ async function copyToken(id, code, el) {
     setTimeout(() => {
       el.classList.remove('copied');
       const t = tokens.find(x => x.id === id);
-      if (t && t.token) el.textContent = t.token.slice(0,3) + ' ' + t.token.slice(3);
+      if (t && t.token) el.textContent = t.token.slice(0, 3) + ' ' + t.token.slice(3);
     }, 1200);
   } catch {
     showToast('Could not copy');
@@ -347,10 +347,10 @@ async function copyToken(id, code, el) {
 }
 
 async function addToken() {
-  const name   = document.getElementById('inp-name').value.trim();
+  const name = document.getElementById('inp-name').value.trim();
   const secret = document.getElementById('inp-secret').value.trim();
-  const errEl  = document.getElementById('form-error');
-  const btn    = document.getElementById('add-btn');
+  const errEl = document.getElementById('form-error');
+  const btn = document.getElementById('add-btn');
 
   errEl.style.display = 'none';
 
@@ -377,9 +377,9 @@ async function addToken() {
       return;
     }
 
-    document.getElementById('inp-name').value    = '';
+    document.getElementById('inp-name').value = '';
     document.getElementById('inp-account').value = '';
-    document.getElementById('inp-secret').value  = '';
+    document.getElementById('inp-secret').value = '';
     closeModal();
     showToast('Token added');
     await fetchTokens();
@@ -408,9 +408,9 @@ async function exportTokens() {
     if (!res.ok) { showToast('Export failed'); return; }
     const text = await res.text();
     const blob = new Blob([text], { type: 'text/plain' });
-    const url  = URL.createObjectURL(blob);
-    const a    = document.createElement('a');
-    a.href     = url;
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
     a.download = 'softkey-export.txt';
     a.click();
     URL.revokeObjectURL(url);
@@ -427,7 +427,7 @@ async function exportTokens() {
 function openImportModal() {
   document.getElementById('import-overlay').classList.add('open');
   document.getElementById('import-content').value = '';
-  document.getElementById('import-file').value    = '';
+  document.getElementById('import-file').value = '';
   document.getElementById('import-preview').textContent = '';
   document.getElementById('import-error').style.display = 'none';
   document.querySelector('input[name="import-mode"][value="merge"]').checked = true;
@@ -477,9 +477,9 @@ function updateImportPreview() {
 
 async function doImport() {
   const content = document.getElementById('import-content').value.trim();
-  const mode    = document.querySelector('input[name="import-mode"]:checked').value;
-  const errEl   = document.getElementById('import-error');
-  const btn     = document.getElementById('import-btn');
+  const mode = document.querySelector('input[name="import-mode"]:checked').value;
+  const errEl = document.getElementById('import-error');
+  const btn = document.getElementById('import-btn');
 
   errEl.style.display = 'none';
 
@@ -489,7 +489,7 @@ async function doImport() {
     return;
   }
 
-  btn.disabled    = true;
+  btn.disabled = true;
   btn.textContent = 'Importing...';
 
   try {
@@ -515,7 +515,7 @@ async function doImport() {
     errEl.textContent = 'Connection error.';
     errEl.style.display = 'block';
   } finally {
-    btn.disabled    = false;
+    btn.disabled = false;
     btn.textContent = 'Import';
   }
 }
@@ -615,17 +615,17 @@ function showToast(msg) {
 }
 
 function escHtml(str) {
-  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape') { closeModal(); closeImportModal(); closeSettingsModal(); }
   if (e.key === 'Enter') {
     const id = document.activeElement.id;
-    if (id === 'inp-name' || id === 'inp-secret')                  addToken();
-    else if (id === 'setup-password' || id === 'setup-confirm')    doSetup();
-    else if (id === 'login-password')                              doLogin();
-    else if (id === 'recover-code' || id === 'recover-password')   doRecover();
+    if (id === 'inp-name' || id === 'inp-secret') addToken();
+    else if (id === 'setup-password' || id === 'setup-confirm') doSetup();
+    else if (id === 'login-password') doLogin();
+    else if (id === 'recover-code' || id === 'recover-password') doRecover();
   }
 });
 

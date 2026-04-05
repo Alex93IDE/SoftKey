@@ -1,14 +1,14 @@
 const express = require('express');
-const fs      = require('fs');
-const path    = require('path');
-const crypto  = require('crypto');
+const fs = require('fs');
+const path = require('path');
+const crypto = require('crypto');
 const { deriveKey, aesEncrypt, aesDecrypt } = require('../lib/crypto');
 const { createSession, resumeSession, deleteSession } = require('../lib/sessions');
-const state   = require('../lib/state');
+const state = require('../lib/state');
 
 module.exports = function (dataDir) {
-  const router       = express.Router();
-  const AUTH_FILE    = path.join(dataDir, 'auth.json');
+  const router = express.Router();
+  const AUTH_FILE = path.join(dataDir, 'auth.json');
   const SECRETS_FILE = path.join(dataDir, 'secrets.json');
   const SESSION_FILE = path.join(dataDir, 'session.json');
 
@@ -35,13 +35,13 @@ module.exports = function (dataDir) {
 
     const newMasterKey = crypto.randomBytes(32);
 
-    const passwordSalt        = crypto.randomBytes(32).toString('hex');
-    const passwordKey         = deriveKey(password, passwordSalt);
-    const encryptedMasterKey  = aesEncrypt(newMasterKey, passwordKey);
+    const passwordSalt = crypto.randomBytes(32).toString('hex');
+    const passwordKey = deriveKey(password, passwordSalt);
+    const encryptedMasterKey = aesEncrypt(newMasterKey, passwordKey);
 
-    const recoveryCode               = crypto.randomBytes(20).toString('hex');
-    const recoverySalt               = crypto.randomBytes(32).toString('hex');
-    const recoveryKey                = deriveKey(recoveryCode, recoverySalt);
+    const recoveryCode = crypto.randomBytes(20).toString('hex');
+    const recoverySalt = crypto.randomBytes(32).toString('hex');
+    const recoveryKey = deriveKey(recoveryCode, recoverySalt);
     const encryptedMasterKeyRecovery = aesEncrypt(newMasterKey, recoveryKey);
 
     saveAuth({ passwordSalt, encryptedMasterKey, recoverySalt, encryptedMasterKeyRecovery });
@@ -111,11 +111,11 @@ module.exports = function (dataDir) {
     const normalizedCode = recoveryCode.replace(/[^a-fA-F0-9]/g, '').toLowerCase();
 
     try {
-      const recoveryKey        = deriveKey(normalizedCode, auth.recoverySalt);
-      const decryptedKey       = aesDecrypt(auth.encryptedMasterKeyRecovery, recoveryKey);
+      const recoveryKey = deriveKey(normalizedCode, auth.recoverySalt);
+      const decryptedKey = aesDecrypt(auth.encryptedMasterKeyRecovery, recoveryKey);
 
-      const newPasswordSalt      = crypto.randomBytes(32).toString('hex');
-      const newPasswordKey       = deriveKey(newPassword, newPasswordSalt);
+      const newPasswordSalt = crypto.randomBytes(32).toString('hex');
+      const newPasswordKey = deriveKey(newPassword, newPasswordSalt);
       const newEncryptedMasterKey = aesEncrypt(decryptedKey, newPasswordKey);
 
       saveAuth({ ...auth, passwordSalt: newPasswordSalt, encryptedMasterKey: newEncryptedMasterKey });
