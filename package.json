@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "express": "^5.2.1",
+    "express-rate-limit": "^8.3.2",
     "otplib": "^13.4.0"
   }
 }

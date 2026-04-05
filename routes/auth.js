@@ -2,9 +2,18 @@ const express = require('express');
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
+const rateLimit = require('express-rate-limit');
 const { deriveKey, aesEncrypt, aesDecrypt } = require('../lib/crypto');
 const { createSession, resumeSession, deleteSession } = require('../lib/sessions');
 const state = require('../lib/state');
+
+const authLimiter = rateLimit({
+  windowMs: 10 * 60 * 1000,
+  max: 5,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many attempts. Try again later.' },
+});
 
 module.exports = function (dataDir) {
   const router = express.Router();
@@ -64,7 +73,7 @@ module.exports = function (dataDir) {
     res.json({ recoveryCode, sessionToken });
   });
 
-  router.post('/login', (req, res) => {
+  router.post('/login', authLimiter, (req, res) => {
     const auth = loadAuth();
     if (!auth) return res.status(400).json({ error: 'Not set up' });
 
@@ -96,7 +105,7 @@ module.exports = function (dataDir) {
     }
   });
 
-  router.post('/recover', (req, res) => {
+  router.post('/recover', authLimiter, (req, res) => {
     const auth = loadAuth();
     if (!auth) return res.status(400).json({ error: 'Not set up' });
 
