@@ -15,6 +15,33 @@ function showView(id) {
 }
 
 // =====================
+// API
+// =====================
+
+// Vault requests carry this tab's session token; the server unlocks per request
+function api(url, options = {}) {
+  const headers = { ...options.headers, Authorization: `Bearer ${sessionStorage.getItem('sk_session') || ''}` };
+  return fetch(url, { ...options, headers });
+}
+
+// =====================
+// VERSION
+// =====================
+
+// Version from package.json and server start time, shown as "v1.0.0 · 202610041656"
+async function loadVersion() {
+  try {
+    const res = await fetch('/api/version');
+    const { version, started } = await res.json();
+    document.querySelectorAll('.app-version').forEach(el => {
+      el.textContent = `v${version} · ${started}`;
+    });
+  } catch {
+    // Not critical: the label just stays empty
+  }
+}
+
+// =====================
 // AUTH INIT
 // =====================
 
@@ -261,8 +288,11 @@ async function doLogout() {
 
 async function fetchTokens() {
   try {
-    const res = await fetch('/api/tokens');
+    const res = await api('/api/tokens');
     if (res.status === 401) {
+      sessionStorage.removeItem('sk_session');
+      tokens = [];
+      renderTokens();
       if (!document.querySelector('.auth-view.active')) showView('view-login');
       return;
     }
@@ -364,7 +394,7 @@ async function addToken() {
 
   try {
     const account = document.getElementById('inp-account').value.trim();
-    const res = await fetch('/api/secrets', {
+    const res = await api('/api/secrets', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ name, secret, issuer: name, account }),
@@ -394,7 +424,7 @@ async function addToken() {
 async function deleteToken(id) {
   if (!confirm('Delete this token?')) return;
   try {
-    await fetch(`/api/secrets/${id}`, { method: 'DELETE' });
+    await api(`/api/secrets/${id}`, { method: 'DELETE' });
     await fetchTokens();
   } catch {
     showToast('Failed to delete token');
@@ -404,7 +434,7 @@ async function deleteToken(id) {
 async function exportTokens() {
   if (tokens.length === 0) { showToast('No tokens to export'); return; }
   try {
-    const res = await fetch('/api/export');
+    const res = await api('/api/export');
     if (!res.ok) { showToast('Export failed'); return; }
     const text = await res.text();
     const blob = new Blob([text], { type: 'text/plain' });
@@ -493,7 +523,7 @@ async function doImport() {
   btn.textContent = 'Importing...';
 
   try {
-    const res = await fetch('/api/import', {
+    const res = await api('/api/import', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ content, mode }),
@@ -632,6 +662,7 @@ document.addEventListener('keydown', e => {
 // =====================
 // START
 // =====================
+loadVersion();
 initAuth();
 setInterval(updateCountdown, 500);
 setInterval(fetchTokens, 30000);

@@ -5,7 +5,6 @@ const crypto = require('crypto');
 const rateLimit = require('express-rate-limit');
 const { deriveKey, aesEncrypt, aesDecrypt } = require('../lib/crypto');
 const { createSession, resumeSession, deleteSession } = require('../lib/sessions');
-const state = require('../lib/state');
 
 const authLimiter = rateLimit({
   windowMs: 10 * 60 * 1000,
@@ -31,7 +30,7 @@ module.exports = function (dataDir) {
   }
 
   router.get('/status', (_req, res) => {
-    res.json({ setup: !!loadAuth(), authenticated: !!state.get() });
+    res.json({ setup: !!loadAuth() });
   });
 
   router.post('/setup', (req, res) => {
@@ -54,8 +53,6 @@ module.exports = function (dataDir) {
     const encryptedMasterKeyRecovery = aesEncrypt(newMasterKey, recoveryKey);
 
     saveAuth({ passwordSalt, encryptedMasterKey, recoverySalt, encryptedMasterKeyRecovery });
-    state.set(newMasterKey);
-
     // Migrate existing plaintext secrets if present
     let existing = [];
     if (fs.existsSync(SECRETS_FILE)) {
@@ -66,10 +63,10 @@ module.exports = function (dataDir) {
     }
     fs.writeFileSync(
       SECRETS_FILE,
-      JSON.stringify(aesEncrypt(JSON.stringify(existing), state.get()), null, 2)
+      JSON.stringify(aesEncrypt(JSON.stringify(existing), newMasterKey), null, 2)
     );
 
-    const sessionToken = createSession(SESSION_FILE, state.get());
+    const sessionToken = createSession(SESSION_FILE, newMasterKey);
     res.json({ recoveryCode, sessionToken });
   });
 
@@ -82,11 +79,10 @@ module.exports = function (dataDir) {
 
     try {
       const key = deriveKey(password, auth.passwordSalt);
-      state.set(aesDecrypt(auth.encryptedMasterKey, key));
-      const sessionToken = createSession(SESSION_FILE, state.get());
+      const masterKey = aesDecrypt(auth.encryptedMasterKey, key);
+      const sessionToken = createSession(SESSION_FILE, masterKey);
       res.json({ ok: true, sessionToken });
     } catch {
-      state.clear();
       res.status(401).json({ error: 'Incorrect password' });
     }
   });
@@ -98,7 +94,6 @@ module.exports = function (dataDir) {
     try {
       const key = resumeSession(SESSION_FILE, sessionToken);
       if (!key) return res.status(401).json({ error: 'Session expired' });
-      state.set(key);
       res.json({ ok: true });
     } catch {
       res.status(401).json({ error: 'Invalid session' });
@@ -128,8 +123,7 @@ module.exports = function (dataDir) {
       const newEncryptedMasterKey = aesEncrypt(decryptedKey, newPasswordKey);
 
       saveAuth({ ...auth, passwordSalt: newPasswordSalt, encryptedMasterKey: newEncryptedMasterKey });
-      state.set(decryptedKey);
-      const sessionToken = createSession(SESSION_FILE, state.get());
+      const sessionToken = createSession(SESSION_FILE, decryptedKey);
       res.json({ ok: true, sessionToken });
     } catch {
       res.status(401).json({ error: 'Incorrect recovery code' });
@@ -139,7 +133,6 @@ module.exports = function (dataDir) {
   router.post('/logout', (req, res) => {
     const { sessionToken } = req.body;
     if (sessionToken) deleteSession(SESSION_FILE, sessionToken);
-    state.clear();
     res.json({ ok: true });
   });
 

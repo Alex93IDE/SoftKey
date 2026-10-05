@@ -1,17 +1,24 @@
 {
   "name": "softkey",
-  "version": "1.0.0",
-  "description": "",
-  "license": "ISC",
-  "author": "",
+  "version": "1.1.0",
+  "description": "Self-hosted TOTP authenticator that runs in your browser, with an encrypted vault on your own machine.",
+  "license": "MIT",
+  "author": "Alex93IDE",
   "type": "commonjs",
   "main": "main.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node main.js"
   },
   "dependencies": {
     "express": "^5.2.1",
     "express-rate-limit": "^8.3.2",
     "otplib": "^13.4.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Alex93IDE/SoftKey.git"
+  },
+  "engines": {
+    "node": ">=20"
   }
 }

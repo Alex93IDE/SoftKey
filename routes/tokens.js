@@ -3,20 +3,30 @@ const fs = require('fs');
 const path = require('path');
 const { aesEncrypt, aesDecrypt } = require('../lib/crypto');
 const { generateToken } = require('../lib/totp');
-const state = require('../lib/state');
+const { resumeSession } = require('../lib/sessions');
 
 module.exports = function (dataDir) {
   const router = express.Router();
   const SECRETS_FILE = path.join(dataDir, 'secrets.json');
+  const SESSION_FILE = path.join(dataDir, 'session.json');
 
-  function requireAuth(_req, res, next) {
-    if (!state.get()) return res.status(401).json({ error: 'Not authenticated' });
+  // Every request must carry its own session token (`Authorization: Bearer <token>`).
+  // The master key is decrypted from that session for this request only, so one
+  // unlocked tab never opens the vault to anyone else who can reach the server.
+  function requireAuth(req, res, next) {
+    const match = /^Bearer ([a-f0-9]{64})$/i.exec(req.get('Authorization') || '');
+    if (!match) return res.status(401).json({ error: 'Not authenticated' });
+    try {
+      req.masterKey = resumeSession(SESSION_FILE, match[1]);
+    } catch {
+      req.masterKey = null;
+    }
+    if (!req.masterKey) return res.status(401).json({ error: 'Session expired' });
     next();
   }
 
-  function loadSecrets() {
-    const masterKey = state.get();
-    if (!masterKey || !fs.existsSync(SECRETS_FILE)) return [];
+  function loadSecrets(masterKey) {
+    if (!fs.existsSync(SECRETS_FILE)) return [];
     try {
       const raw = JSON.parse(fs.readFileSync(SECRETS_FILE, 'utf-8'));
       return JSON.parse(aesDecrypt(raw, masterKey).toString('utf-8'));
@@ -25,17 +35,15 @@ module.exports = function (dataDir) {
     }
   }
 
-  function saveSecrets(secrets) {
-    const masterKey = state.get();
-    if (!masterKey) throw new Error('Not authenticated');
+  function saveSecrets(masterKey, secrets) {
     fs.writeFileSync(
       SECRETS_FILE,
       JSON.stringify(aesEncrypt(JSON.stringify(secrets), masterKey), null, 2)
     );
   }
 
-  router.get('/tokens', requireAuth, (_req, res) => {
-    const secrets = loadSecrets();
+  router.get('/tokens', requireAuth, (req, res) => {
+    const secrets = loadSecrets(req.masterKey);
     const nowEpoch = Math.floor(Date.now() / 1000);
 
     const tokens = secrets.map(entry => {
@@ -60,7 +68,7 @@ module.exports = function (dataDir) {
     const { name, secret, issuer, account } = req.body;
     if (!name || !secret) return res.status(400).json({ error: 'name and secret are required' });
 
-    const secrets = loadSecrets();
+    const secrets = loadSecrets(req.masterKey);
     const newEntry = {
       id: Date.now().toString(),
       name: name.trim(),
@@ -69,25 +77,30 @@ module.exports = function (dataDir) {
       secret: secret.replace(/\s/g, '').toUpperCase(),
     };
     secrets.push(newEntry);
-    saveSecrets(secrets);
+    saveSecrets(req.masterKey, secrets);
     res.json({ success: true, id: newEntry.id });
   });
 
   router.delete('/secrets/:id', requireAuth, (req, res) => {
-    const secrets = loadSecrets();
+    const secrets = loadSecrets(req.masterKey);
     const filtered = secrets.filter(e => e.id !== req.params.id);
     if (filtered.length === secrets.length) return res.status(404).json({ error: 'Not found' });
-    saveSecrets(filtered);
+    saveSecrets(req.masterKey, filtered);
     res.json({ success: true });
   });
 
-  router.get('/export', requireAuth, (_req, res) => {
-    const secrets = loadSecrets();
+  router.get('/export', requireAuth, (req, res) => {
+    const secrets = loadSecrets(req.masterKey);
     if (secrets.length === 0) return res.status(404).json({ error: 'No secrets to export' });
     const uris = secrets.map(s => {
       const digits = s.digits || 6;
       const period = s.period || 30;
-      let uri = `otpauth://totp/${encodeURIComponent(s.name)}?secret=${s.secret}&issuer=${encodeURIComponent(s.name)}`;
+      const issuer = s.issuer || s.name;
+      // Label is "Issuer:account" (Key URI format), so the account survives a round trip
+      const label = s.account
+        ? `${encodeURIComponent(issuer)}:${encodeURIComponent(s.account)}`
+        : encodeURIComponent(issuer);
+      let uri = `otpauth://totp/${label}?secret=${s.secret}&issuer=${encodeURIComponent(issuer)}`;
       if (digits !== 6) uri += `&digits=${digits}`;
       if (period !== 30) uri += `&period=${period}`;
       return uri;
@@ -151,10 +164,10 @@ module.exports = function (dataDir) {
 
     if (imported.length === 0) return res.status(400).json({ error: 'No valid entries could be parsed' });
 
-    const existing = mode === 'replace' ? [] : loadSecrets();
+    const existing = mode === 'replace' ? [] : loadSecrets(req.masterKey);
     const existingSecrets = new Set(existing.map(e => e.secret));
     const toAdd = mode === 'replace' ? imported : imported.filter(e => !existingSecrets.has(e.secret));
-    saveSecrets([...existing, ...toAdd]);
+    saveSecrets(req.masterKey, [...existing, ...toAdd]);
     res.json({ imported: toAdd.length, skipped: imported.length - toAdd.length });
   });
 

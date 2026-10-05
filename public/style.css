@@ -476,3 +476,14 @@ header p {
   visibility: hidden;
 }
 .toast.show { opacity: 1; visibility: visible; }
+
+/* Something to look up, not to read: monospace (the date is compared digit by
+   digit) and dimmed, so it doesn't compete with the rest of the card. */
+.app-version {
+  margin-top: 18px;
+  text-align: center;
+  font-family: 'Courier New', monospace;
+  font-size: 0.75rem;
+  color: var(--muted);
+  opacity: 0.7;
+}
